@@ -9,14 +9,51 @@ const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return iso(d); };
 const dayDiff = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
 
-const blankState = () => ({ start: today(), maxLevel: 2, solved: {}, companies: [], code: {}, activity: {}, ref: {}, bigo: {}, learnRead: {} });
+const blankState = () => ({ start: today(), solved: {}, companies: [], code: {}, activity: {}, ref: {}, bigo: {}, learnRead: {} });
+const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+// Keeps only well-formed fields of a stored or imported state, so a bad backup file can't break a page
+// or inject markup. Fields this app doesn't know (e.g. from the combined Prep Hub app) are kept as they are.
+function cleanState(d) {
+  const s = blankState();
+  if (!isObj(d)) return s;
+  for (const k of Object.keys(d)) {
+    if (k === "__proto__" || k === "constructor" || k === "prototype") continue;
+    const v = d[k], def = s[k];
+    if (def === undefined || (Array.isArray(def) ? Array.isArray(v) : isObj(def) ? isObj(v) : typeof v === typeof def)) s[k] = v;
+  }
+  if (!isDate(s.start)) s.start = today();
+  if (s.accent != null && !/^#[0-9a-f]{6}$/i.test(s.accent)) s.accent = null;
+  for (const [slug, r] of Object.entries(s.solved)) {
+    if (!isObj(r)) { delete s.solved[slug]; continue; }
+    if (!isDate(r.next)) r.next = today();
+    if (!Number.isInteger(r.stage) || r.stage < 0) r.stage = 0;
+    r.attempts = Array.isArray(r.attempts) ? r.attempts.filter(isObj) : [];
+  }
+  for (const k of Object.keys(s.code)) if (typeof s.code[k] !== "string") delete s.code[k];
+  for (const k of Object.keys(s.activity)) if (!isDate(k) || typeof s.activity[k] !== "number") delete s.activity[k];
+  s.companies = s.companies.filter(isObj).map((c) => ({
+    name: String(c.name ?? ""), tier: TIERS.some((t) => t.id === +c.tier) ? +c.tier : TIERS[0].id,
+    status: STATUSES.includes(c.status) ? c.status : STATUSES[0], note: String(c.note ?? ""),
+  }));
+  cleanInterview(s); // js/interview.js
+  return s;
+}
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
-  return Object.assign(blankState(), s || {});
+  return cleanState(s);
 }
 let S = load();
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { alert("Could not save to browser storage."); } }
+let saveTimer = null;
+function save() {
+  clearTimeout(saveTimer); saveTimer = null;
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { alert("Could not save to browser storage."); }
+}
+// For typing in editors: saves once the keystrokes pause instead of on every key.
+function saveSoon() { clearTimeout(saveTimer); saveTimer = setTimeout(save, 400); }
+addEventListener("pagehide", () => { if (saveTimer) save(); });
+document.addEventListener("visibilitychange", () => { if (document.hidden && saveTimer) save(); });
 
 // ---------- appearance ----------
 const THEMES = [
@@ -56,13 +93,13 @@ const searchBox = (id, value, ph = "Search problems...") => `<label class="searc
 const pageHead = (title, sub = "") => `<div class="page-head"><h2>${title}</h2>${sub ? `<p class="muted">${sub}</p>` : ""}</div>`;
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const $ = (sel, root = document) => root.querySelector(sel);
-const included = () => PROBLEMS.filter((p) => p.l <= S.maxLevel);
+// Every problem is always shown; its Easy / Medium / Hard tag says how hard it is.
+const included = () => PROBLEMS;
 const rec = (slug) => S.solved[slug];
 const isDone = (slug) => !!rec(slug);
 const probBySlug = (slug) => PROBLEMS.find((p) => p.s === slug);
 const weekProblems = (w) => included().filter((p) => w.cats.includes(p.c));
 const currentWeek = () => Math.min(12, Math.max(1, Math.floor(dayDiff(S.start, today()) / 7) + 1));
-const lvlName = { 1: "Core", 2: "Mid", 3: "Stretch" };
 const stepNum = (n) => `<span class="step-n">${n}</span>`;
 
 function streak() {
@@ -105,12 +142,12 @@ const coPills = (p) => {
 };
 function probRow(p) {
   return `<tr><td><button class="link-btn" data-open="${p.s}">${esc(p.t)}</button> ${coPills(p)}</td><td>${diffBadge(p.d)}</td>
-    <td class="hide-sm muted">${esc(CATS[p.c])}</td><td class="hide-sm"><span class="pill">${lvlName[p.l]}</span></td>
+    <td class="hide-sm muted">${esc(CATS[p.c])}</td>
     <td>${statusCell(p)}</td><td class="actions"><button class="btn small primary" data-open="${p.s}">Open</button>
     <button class="btn small" data-log="${p.s}">${isDone(p.s) ? "Log again" : "Log"}</button>
     <button class="btn small ghost" data-sol="${p.s}">Solution</button></td></tr>`;
 }
-const probTable = (list) => `<div class="table-wrap"><table><tr><th>Problem</th><th>Difficulty</th><th class="hide-sm">Topic</th><th class="hide-sm">Level</th><th>Status</th><th></th></tr>${list.map(probRow).join("")}</table></div>`;
+const probTable = (list) => `<div class="table-wrap"><table><tr><th>Problem</th><th>Difficulty</th><th class="hide-sm">Topic</th><th>Status</th><th></th></tr>${list.map(probRow).join("")}</table></div>`;
 
 // ---------- logging dialog ----------
 function logDialog(slug) {
@@ -241,7 +278,7 @@ const views = {
       ${step(1, "Learn", `Refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have exercises and videos.`,
         learned, path.length, "topics", nextUnit ? `<span class="muted">Next: ${esc(unitLabel(nextUnit))}</span>` : '<span class="badge done">Done</span>',
         `<button class="btn primary" data-ref="${(nextUnit || path[0])[0]}" data-goto="learn">${learned ? "Continue learning" : "Start learning"} &rarr;</button>`)}
-      ${step(2, "Problems", `${PROBLEMS.length} hand-picked LeetCode problems grouped by pattern (${inc.length} at your level). Open one to code it in the browser, log your attempt and reveal the solution.`,
+      ${step(2, "Problems", `${PROBLEMS.length} problems grouped by pattern and tagged Easy, Medium or Hard. Open one to code it in the browser, log your attempt and reveal the solution.`,
         done, inc.length, "solved", due.length ? `<span class="badge due">${due.length} due</span>` : "",
         `<button class="btn primary" data-goto-tab="problems">Practise problems &rarr;</button>`)}
       ${step(3, "Roadmap", "Twelve weeks, one pattern family at a time, with every week's problems and solutions in one place. Week 12 is mock interviews.",
@@ -327,7 +364,7 @@ const views = {
         <span class="cat-foot"><span class="muted">${n} / ${all.length}</span></span>
         <span class="bar"><i style="width:${(100 * n / all.length) | 0}%"></i></span></button>`;
     }).join("")}</div>`;
-    return pageHead(`${stepNum(2)} Problems <span class="muted">${list.length}</span>`, "Grouped by pattern, in the same order as Learn. Pick a pattern to focus on, or open any problem to code it, log your attempt and check the solution. Only problems up to your plan's level are shown (change it in Settings).") + catGrid + `
+    return pageHead(`${stepNum(2)} Problems <span class="muted">${list.length}</span>`, "Grouped by pattern, in the same order as Learn. Pick a pattern to focus on, or open any problem to code it, log your attempt and check the solution.") + catGrid + `
     <div class="card toolbar">
       ${searchBox("f-q", f.q)}
       <select id="f-cat"><option value="">All patterns</option>${Object.entries(CATS).map(([k, v]) => `<option value="${k}" ${f.cat === k ? "selected" : ""}>${v}</option>`).join("")}</select>
@@ -340,7 +377,7 @@ const views = {
         ${probTable(list.slice().sort((a, b) => COMPANY_SETS[f.co].slugs.indexOf(a.s) - COMPANY_SETS[f.co].slugs.indexOf(b.s)))}</div>`
     : f.co && list.length ? `<div class="card"><div class="section-head"><h3>FAANG Top 250 <span class="muted">${list.length} here</span></h3>
         <span class="muted">Ranked by how often Google, Amazon and Meta asked them in the last 6 months</span></div>
-        <p class="muted" style="margin-top:0">From LeetCode's company tags (<a href="https://github.com/liquidslr/leetcode-company-wise-problems" target="_blank" rel="noopener">liquidslr/leetcode-company-wise-problems</a>, 16 Aug 2026). Hover a FAANG pill for each company's score. Every ranked problem is here except 16 SQL questions, one JavaScript-only question and three one-liners./p>
+        <p class="muted" style="margin-top:0">From LeetCode's company tags (<a href="https://github.com/liquidslr/leetcode-company-wise-problems" target="_blank" rel="noopener">liquidslr/leetcode-company-wise-problems</a>, 16 Aug 2026). Hover a FAANG pill for each company's score. Every ranked problem is here except 16 SQL questions, one JavaScript-only question and three one-liners.</p>
         ${probTable(list.slice().sort((a, b) => faangOf(a.s)[0] - faangOf(b.s)[0]))}</div>`
     : groups.length ? groups.map(([k, ps]) => {
       const all = included().filter((p) => p.c === k), n = all.filter((p) => isDone(p.s)).length;
@@ -364,12 +401,13 @@ const views = {
 
   companies() {
     const tierName = (id) => TIERS.find((t) => t.id === +id).name;
+    const TIER_DIFF = { 1: "mostly Easy and Medium", 2: "mostly Medium", 3: "Medium and Hard" };
     return pageHead("Companies", "Toronto &amp; Kitchener-Waterloo. Tiers are general guidance, not inside information: check recent postings and interview reports (Glassdoor, Levels.fyi, LeetCode Discuss) for each employer.") + `
-    ${TIERS.map((t) => `<div class="card"><div class="row between"><h3 style="margin:0">${esc(t.name)}</h3><span class="pill">${esc(t.bar)} · up to ${lvlName[t.levels]} problems</span></div>
+    ${TIERS.map((t) => `<div class="card"><div class="row between"><h3 style="margin:0">${esc(t.name)}</h3><span class="pill">${esc(t.bar)} · ${TIER_DIFF[t.levels]}</span></div>
       <p>${esc(t.emphasis)}</p>
       <p><b>Prioritise:</b> ${t.focus.map((c) => `<button class="tag tag-btn" data-probcat="${c}">${esc(CATS[c])}</button>`).join("")}</p>
       <p><b>Examples:</b> ${t.names.map((n) => `<span class="tag">${esc(n)}</span>`).join("")}</p>
-      <button class="btn small" data-setlevel="${t.levels}">Set my plan to this tier (${lvlName[t.levels]} and below)</button></div>`).join("")}
+      ${t.levels === 3 ? `<button class="btn small" data-diffgo="H">Practise the Hard problems</button>` : ""}</div>`).join("")}
     <div class="card"><h3 style="margin-top:0">My application tracker</h3>
       <div class="row"><input id="c-name" placeholder="Company"><select id="c-tier">${TIERS.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</select>
       <button class="btn primary" id="c-add">Add</button></div>
@@ -405,9 +443,7 @@ const views = {
         <div class="setting"><div><b>Main language</b><div class="muted">Step 1 starts with this language's refresher, and data-structure code is shown in it. Problems and solutions are in Python either way.</div></div>
           ${seg("data-dslang", mainLang(), LANGS)}</div>
         <div class="setting"><div><b>Start date</b><div class="muted">Week 1 of the roadmap begins on this day. Today is week ${currentWeek()}.</div></div>
-          <input type="date" id="s-start" value="${S.start}"></div>
-        <div class="setting"><div><b>Problem level</b><div class="muted">Core suits banks and local employers, Mid adds startups, Stretch adds big-tech Hards.</div></div>
-          <select id="s-level">${[1, 2, 3].map((l) => `<option value="${l}" ${S.maxLevel === l ? "selected" : ""}>${lvlName[l]} and below (${PROBLEMS.filter((p) => p.l <= l).length})</option>`).join("")}</select></div>
+          <input type="date" id="s-start" value="${esc(S.start)}"></div>
       </div>
       <div class="card"><h3>Help</h3>
         <div class="setting"><div><b>Welcome note</b><div class="muted">The short "how DSA Prep works" note on Home.</div></div>
@@ -517,7 +553,7 @@ function refPattern(k) {
       <pre>${esc(n.code)}</pre>
       <div class="row"><a class="btn small" href="${yt("neetcode " + CATS[k] + " explained")}" target="_blank" rel="noopener">More videos</a></div>
       ${vids(EXPLAINERS.cats[k])}</div>
-    <div class="card practise-cta"><div class="row between"><div><b>Practise this pattern</b><div class="muted">${probs.length} problem${probs.length === 1 ? "" : "s"} at your level · ${solved} solved</div></div>
+    <div class="card practise-cta"><div class="row between"><div><b>Practise this pattern</b><div class="muted">${probs.length} problem${probs.length === 1 ? "" : "s"} · ${solved} solved</div></div>
       <button class="btn primary" data-probcat="${k}">Practise ${esc(CATS[k])} &rarr;</button></div></div>
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("pat:" + k)}</div>${learnNav("pat:" + k)}`;
 }
@@ -538,7 +574,7 @@ async function runExercise(i, j) {
   const code = $("#ex-" + id).value, res = $("#res-" + id);
   S.code["ex:" + id] = code; save();
   res.style.display = "block"; res.textContent = "Running...";
-  const { out, err } = await execPy(code + "\n\n" + ex.tests, true);
+  const { out, err } = await runFresh(code + "\n\n" + ex.tests);
   if (err) res.textContent = "Not yet:\n" + err + (out ? "\n\nOutput:\n" + out : "");
   else { if (!S.ref[id]) bump(); S.ref[id] = true; save(); res.textContent = "All tests passed!" + (out ? "\n\nOutput:\n" + out : ""); }
   res.className = err ? "muted" : "s-solved";
@@ -704,7 +740,7 @@ document.addEventListener("click", (e) => {
     const [i, j] = t.dataset.exreset.split(":").map(Number), id = LESSONS[i].id + "-" + j;
     delete S.code["ex:" + id]; save(); return rerender();
   }
-  if (t.dataset.setlevel) { S.maxLevel = +t.dataset.setlevel; save(); return render(); }
+  if (t.dataset.diffgo) { views._ws = null; views._f = { cat: "", diff: t.dataset.diffgo, status: "", q: "", co: "" }; return go("problems"); }
   if (t.dataset.cdel) { S.companies.splice(+t.dataset.cdel, 1); save(); return render(); }
   switch (t.id) {
     case "c-add": {
@@ -724,19 +760,18 @@ document.addEventListener("change", (e) => {
   const t = e.target;
   if (t.id === "f-cat" || t.id === "f-diff" || t.id === "f-status" || t.id === "f-co") { views._f[t.id.slice(2)] = t.value; render(); }
   else if (t.id === "s-start") { S.start = t.value || today(); save(); }
-  else if (t.id === "s-level") { S.maxLevel = +t.value; save(); render(); }
   else if (t.dataset.cstatus) { S.companies[+t.dataset.cstatus].status = t.value; save(); }
   else if (t.dataset.cnote) { S.companies[+t.dataset.cnote].note = t.value; save(); }
   else if (t.id === "s-import" && t.files[0]) {
     t.files[0].text().then((txt) => {
-      try { const d = JSON.parse(txt); if (!d || !d.solved) throw 0; S = Object.assign(load(), d); save(); render(); }
+      try { const d = JSON.parse(txt); if (!isObj(d) || !isObj(d.solved)) throw 0; S = cleanState(d); searchIndex = null; save(); applyTheme(); render(); }
       catch (err) { alert("That file isn't a valid progress export."); }
     });
   }
 });
 document.addEventListener("input", (e) => {
   const t = e.target;
-  if (t.dataset && t.dataset.lx) { S.code["lx:" + t.dataset.lx] = t.value; save(); return; }
+  if (t.dataset && t.dataset.lx) { S.code["lx:" + t.dataset.lx] = t.value; saveSoon(); return; }
   if (t.id === "g-slider") { views._gi = +t.value; growth(); }
   if (t.id === "f-q") {
     views._f.q = t.value; const pos = t.selectionStart; render();

@@ -17,7 +17,9 @@ async function ensurePy() {
   if (pyodide) return pyodide;
   if (!window.loadPyodide) await new Promise((res, rej) => {
     const s = document.createElement("script");
-    s.src = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"; s.onload = res; s.onerror = () => rej(new Error("Could not load Pyodide (offline?)"));
+    s.src = "https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js";
+    s.integrity = "sha384-i3R37b3tF+HWudsUf1VSEOY2YxwSNMqY8DQa9Z0O3xh+NkJ9o+yjcGyIi5huj+nB"; s.crossOrigin = "anonymous";
+    s.onload = res; s.onerror = () => rej(new Error("Could not load Pyodide (offline?)"));
     document.head.appendChild(s);
   });
   return (pyodide = await loadPyodide());
@@ -64,7 +66,7 @@ function workspace(slug) {
       <div class="row">${sibs[i - 1] ? `<button class="btn small" data-open="${sibs[i - 1].s}" title="${esc(sibs[i - 1].t)}">&larr; Prev</button>` : ""}
         ${i >= 0 ? `<span class="muted">${i + 1} of ${sibs.length} in ${esc(CATS[p.c])}</span>` : ""}
         ${sibs[i + 1] ? `<button class="btn small" data-open="${sibs[i + 1].s}" title="${esc(sibs[i + 1].t)}">Next &rarr;</button>` : ""}</div></div>
-    <div class="ws-head-main"><div><div class="label">${esc(CATS[p.c])} · ${lvlName[p.l]}</div>
+    <div class="ws-head-main"><div><div class="label">${esc(CATS[p.c])}</div>
       <h2>${esc(p.t)} ${diffBadge(p.d)} ${coPills(p)} ${statusCell(p)}</h2></div>
       <div class="row">${timerHtml()}<button class="btn primary" data-log="${p.s}">${r ? "Log another attempt" : "Log attempt"}</button></div></div></div>`;
   const tabs = `<div class="ws-tabs" role="tablist">${WS_TABS.map(([k, l]) => `<button role="tab" aria-selected="${k === cur}" class="${k === cur ? "on" : ""}" data-wstab="${k}">${l}${k === "hints" && hintsShown(p.s) ? ` <span class="muted">${hintsShown(p.s)}/${hintsFor(p).length}</span>` : ""}${(k === "solution" || k === "video") && !isRevealed(p.s) ? ' <span class="lock" aria-label="locked">&#128274;</span>' : ""}</button>`).join("")}</div>`;
@@ -149,5 +151,5 @@ document.addEventListener("click", (e) => {
   if (t.id === "t-reset") { clearInterval(timerId); timerId = null; timerSec = 0; return rerender(); }
 });
 document.addEventListener("input", (e) => {
-  if (e.target.id === "code") { S.code[views._ws || ""] = e.target.value; save(); }
+  if (e.target.id === "code") { S.code[views._ws || ""] = e.target.value; saveSoon(); }
 });

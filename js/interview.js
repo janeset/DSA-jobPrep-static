@@ -61,6 +61,32 @@ function ivState() {
   if (S.ivActive && !S.ivActive.rounds.every((r) => ROUND_NAMES[r.kind])) S.ivActive = null;
   return S;
 }
+// Called by cleanState (app.js) on stored and imported data: numbers stay numbers and text stays text,
+// so nothing from a backup file can reach the page as markup. Rounds of kinds this version doesn't
+// show (from the combined Prep Hub app) are kept in history, which skips them.
+const ivStr = (v) => (typeof v === "string" ? v : "");
+const ivNum = (v, d = 0) => (Number.isFinite(v) ? v : d);
+const cleanRound = (r) => Object.assign({}, r, {
+  kind: ivStr(r.kind), ref: ivStr(r.ref), title: ivStr(r.title), notes: ivStr(r.notes),
+  mins: Math.max(1, Math.round(ivNum(r.mins, 25))), score: [1, 2, 3, 4].includes(r.score) ? r.score : 0,
+  secs: Math.max(0, ivNum(r.secs)), acc: Math.max(0, ivNum(r.acc)), since: Number.isFinite(r.since) ? r.since : null, shown: !!r.shown,
+});
+const cleanMock = (m) => !isObj(m) || !Array.isArray(m.rounds) ? null
+  : Object.assign({}, m, { id: ivStr(m.id) || "m" + Math.random().toString(36).slice(2), date: ivStr(m.date), format: ivStr(m.format),
+    assess: m.assess == null ? undefined : ivStr(m.assess), rounds: m.rounds.filter(isObj).map(cleanRound) });
+function cleanInterview(s) {
+  if (s.ivMocks !== undefined) s.ivMocks = Array.isArray(s.ivMocks) ? s.ivMocks.map(cleanMock).filter((m) => m && m.rounds.length) : [];
+  if (s.stories !== undefined) s.stories = !Array.isArray(s.stories) ? [] : s.stories.filter(isObj).map((x) => Object.assign({}, x, {
+    id: ivStr(x.id) || "s" + Math.random().toString(36).slice(2), title: ivStr(x.title), s: ivStr(x.s), t: ivStr(x.t), a: ivStr(x.a), r: ivStr(x.r),
+    themes: Array.isArray(x.themes) ? x.themes.filter((t) => typeof t === "string") : [],
+  }));
+  if (s.ivPrefs !== undefined && !isObj(s.ivPrefs)) delete s.ivPrefs;
+  if (s.ivActive != null) {
+    const m = cleanMock(s.ivActive);
+    const ok = m && m.rounds.length && m.rounds.every((r) => ROUND_NAMES[r.kind] && (r.kind !== "dsa" || PROBLEMS.some((p) => p.s === r.ref)));
+    s.ivActive = ok ? Object.assign(m, { cur: Math.min(m.rounds.length - 1, Math.max(0, Math.trunc(ivNum(m.cur)))) }) : null;
+  }
+}
 const shuffle = (a) => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const pickFrom = (...pools) => { for (const p of pools) if (p.length) return shuffle(p)[0]; return null; };
 
@@ -71,7 +97,7 @@ function recentRefs() { return new Set(ivState().ivMocks.slice(-5).flatMap((m) =
 function dealRound(kind, used) {
   const fresh = (ref) => !used.has(ref);
   if (kind === "dsa") {
-    const inc = included(), due = dueReviews().filter((p) => p.l <= S.maxLevel);
+    const inc = included(), due = dueReviews();
     const reached = WEEKS.slice(0, currentWeek()).flatMap((w) => w.cats);
     const p = pickFrom(due.filter((x) => fresh(x.s)), inc.filter((x) => !isDone(x.s) && reached.includes(x.c) && fresh(x.s)), inc.filter((x) => !isDone(x.s) && fresh(x.s)), inc);
     return { ref: p.s, title: p.t };
@@ -201,7 +227,7 @@ function ivAssess() {
     const runs = st.ivMocks.filter((m) => m.assess === a.id), best = runs.length ? Math.max(...runs.map(mockAvg)) : 0;
     const mins = a.probs.reduce((n, [, m]) => n + m, 0), ps = a.probs.map(([s]) => probBySlug(s));
     return `<div class="card assess-card">
-      <div class="row between"><span class="label" style="margin:0">Assessment ${i + 1}</span><span class="pill">${lvlName[a.level]}${a.level > S.maxLevel ? " · above your level" : ""}</span></div>
+      <div class="row between"><span class="label" style="margin:0">Assessment ${i + 1}</span></div>
       <h3>${esc(a.name)}</h3><p class="muted" style="margin:0">${esc(a.desc)}</p>
       <div class="row">${ps.map((p) => diffBadge(p.d)).join("")}<span class="muted">${ps.length} questions · ${mins} min</span></div>
       <div class="row between"><span class="muted">${runs.length ? `Best ${best.toFixed(1)} / 4 · ${runs.length} run${runs.length === 1 ? "" : "s"}` : "Not taken yet"}</span>
@@ -308,6 +334,6 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("input", (e) => {
   const d = e.target.dataset || {};
-  if (d.ivnotes !== undefined && S.ivActive) { S.ivActive.rounds[S.ivActive.cur].notes = e.target.value; save(); }
+  if (d.ivnotes !== undefined && S.ivActive) { S.ivActive.rounds[S.ivActive.cur].notes = e.target.value; saveSoon(); }
   if (d.ivs && views._ivDraft) views._ivDraft[d.ivs] = e.target.value;
 });

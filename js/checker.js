@@ -1,7 +1,7 @@
 "use strict";
 // Run tests for the problem workspace: checks your Solution against the inputs in tests.js
 // (expected answers come from the reference solution in SOL), then times it on a large input.
-// Python runs in a worker (pyworker.js) so a slow or endless solution can be stopped. Opened as
+// Python runs in a worker (js/pyworker.js) so a slow or endless solution can be stopped. Opened as
 // a file (file://) workers aren't allowed, so it falls back to the page's own Python and skips
 // the speed test. Loaded before app.js; uses app.js globals (S, views, SOL, esc, ensurePy...) at call time.
 
@@ -497,6 +497,16 @@ def run_plain(code, spec_json):
         exec(compile(code, "<your code>", "exec"), ns)
     except Exception as e:
         print(err_text(e))
+
+def run_fresh(code):
+    """Lesson exercises: the code plus its asserts, in an empty namespace."""
+    try:
+        exec(compile(code, "<your code>", "exec"), {"__name__": "__main__"})
+    except SyntaxError as e:
+        return json.dumps({"err": err_text(e)})
+    except Exception as e:
+        return json.dumps({"err": "%s: %s" % (type(e).__name__, e)})
+    return json.dumps({})
 `;
 
 // ---------------- running Python: a worker if we can, else the page ----------------
@@ -511,7 +521,7 @@ function killWorker(reply) {
 }
 function getWorker() {
   if (pyw) return pyw;
-  pyw = new Worker("pyworker.js");
+  pyw = new Worker("js/pyworker.js");
   pyw.onmessage = (e) => { const w = pywWait.get(e.data.id); if (w) { pywWait.delete(e.data.id); clearTimeout(w.timer); w.resolve(e.data); } };
   pyw.onerror = () => killWorker({ err: "Python couldn't start in the background (are you offline?)." });
   return pyw;
@@ -549,6 +559,26 @@ async function pyRun(code, secs) {
   return pyCall(code, secs);
 }
 const pyStr = (s) => JSON.stringify(s); // a JSON string is also a valid Python string literal
+// One Python job at a time: the worker keeps a single set of test state (the speed test reads what
+// run_tests left), and a timeout stops the whole worker, so jobs mustn't overlap.
+let pyQueue = Promise.resolve(), pyJobs = 0;
+function pyExclusive(job) {
+  pyJobs++;
+  const p = pyQueue.then(job).finally(() => pyJobs--);
+  pyQueue = p.catch(() => {});
+  return p;
+}
+// Lesson exercises: resolves { out, err }. In the worker an endless loop is stopped after 15 seconds;
+// opened as a file there's no worker, so it runs on the page as before.
+function runFresh(code) {
+  if (!workerOk()) return execPy(code, true);
+  return pyExclusive(async () => {
+    const r = await pyRun(`run_fresh(${pyStr(code)})`, 15);
+    if (r.timeout) return { out: r.out || "", err: "Stopped after 15 seconds. Is there an infinite loop?" };
+    if (r.err) return { out: r.out || "", err: r.err };
+    return { out: (r.out || "").trimEnd(), err: JSON.parse(r.value).err || "" };
+  });
+}
 
 // ---------------- starter code ----------------
 // The method to test: the first public method of the reference Solution class.
@@ -580,8 +610,12 @@ async function runTests(slug) {
   const p = probBySlug(slug), spec = TESTS[slug], ref = SOL[slug];
   views._tr = views._tr || {};
   if (!spec || !ref || (views._tr[slug] && views._tr[slug].running)) return;
-  const st = views._tr[slug] = { running: "Loading Python (the first run downloads about 10 MB)…" };
+  const st = views._tr[slug] = { running: pyJobs ? "Waiting for your other run to finish…" : "Loading Python (the first run downloads about 10 MB)…" };
   drawTests(slug);
+  return pyExclusive(() => testJob(slug, st, p, spec, ref));
+}
+async function testJob(slug, st, p, spec, ref) {
+  if (st.running.startsWith("Waiting")) { st.running = "Running the tests…"; drawTests(slug); }
   const payload = { spec: Object.assign({ m: methodName(ref.c) }, spec), user: S.code[slug] ?? starterFor(p), ref: ref.c };
   let r = await pyRun(`run_tests(${pyStr(JSON.stringify(payload))})`, 10);
   const done = () => { st.running = null; drawTests(slug); };
@@ -614,7 +648,7 @@ async function runCode() {
   const slug = views._ws || "", code = $("#code").value, status = $("#py-status"), out = $("#out");
   S.code[slug] = code; save();
   status.textContent = "Running…";
-  const r = await pyRun(`run_plain(${pyStr(code)}, ${pyStr(JSON.stringify(TESTS[slug] || {}))})`, 15);
+  const r = await pyExclusive(() => pyRun(`run_plain(${pyStr(code)}, ${pyStr(JSON.stringify(TESTS[slug] || {}))})`, 15));
   if (!$("#out")) return;
   out.textContent = r.timeout ? (r.out || "") + "Stopped after 15 seconds. Is there an infinite loop?" : ((r.out || "") + (r.err || "")) || noOutputHint(slug);
   status.textContent = "Done.";

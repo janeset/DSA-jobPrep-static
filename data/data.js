@@ -1,5 +1,6 @@
 // Static content: roadmap weeks, problems, topic notes, company tiers.
-// Problem level l: 1 = core (everyone), 2 = mid (mid-size/startup), 3 = stretch (big tech).
+// Difficulty d (Easy / Medium / Hard) is the tag shown on every problem. l (1-3, how far into prep a problem
+// usually comes) is kept as data but no longer hides anything.
 
 const WEEKS = [
   { n: 1, title: "Arrays & Hashing", cats: ["arrays"] },
@@ -446,18 +447,18 @@ const MOCK_TIPS = [
 // Fixed, timed assessments (Interview > Assessments): a day of coding rounds with a mix of topics
 // and rising difficulty. No problem appears in two sets. probs = [[slug, minutes], ...]
 const ASSESSMENTS = [
-  { id: "warmup", name: "Warm-up", level: 1, desc: "Two Easy questions to get used to coding against the clock.",
+  { id: "warmup", name: "Warm-up", desc: "Two Easy questions to get used to coding against the clock.",
     probs: [["two-sum", 20], ["valid-parentheses", 25]] },
-  { id: "standard", name: "Standard", level: 2, desc: "A typical phone screen or first round: three Mediums from different patterns.",
+  { id: "standard", name: "Standard", desc: "A typical phone screen or first round: three Mediums from different patterns.",
     probs: [["longest-substring-without-repeating-characters", 25], ["binary-tree-level-order-traversal", 25], ["search-in-rotated-sorted-array", 25]] },
-  { id: "midsize", name: "Mid-size & startups", level: 2, desc: "A harder loop: a design question, a graph and a DP.",
+  { id: "midsize", name: "Mid-size & startups", desc: "A harder loop: a design question, a graph and a DP.",
     probs: [["lru-cache", 30], ["course-schedule-ii", 30], ["word-break", 30]] },
-  { id: "faang", name: "FAANG favourites", level: 2, desc: "Three of the questions Google, Amazon and Meta ask most (FAANG Top 250).",
+  { id: "faang", name: "FAANG favourites", desc: "Three of the questions Google, Amazon and Meta ask most (FAANG Top 250).",
     probs: [["subarray-sum-equals-k", 25], ["merge-intervals", 25], ["trapping-rain-water", 35]] },
-  { id: "openai", name: "OpenAI-style", level: 2, desc: "Practical design rounds like those reported at OpenAI: a versioned store, a spreadsheet and a tokenizer.",
+  { id: "openai", name: "OpenAI-style", desc: "Practical design rounds like those reported at OpenAI: a versioned store, a spreadsheet and a tokenizer.",
     probs: [["snapshot-array", 30], ["design-spreadsheet", 25], ["greedy-tokenizer", 30]] },
-  { id: "anthropic", name: "Anthropic-style", level: 2, desc: "Practical rounds like those reported at Anthropic: a staged in-memory database, a profiler trace and a crawler.",
+  { id: "anthropic", name: "Anthropic-style", desc: "Practical rounds like those reported at Anthropic: a staged in-memory database, a profiler trace and a crawler.",
     probs: [["in-memory-database", 45], ["stack-samples-to-trace", 30], ["crawler-fake-web", 25]] },
-  { id: "bigtech", name: "Big tech", level: 3, desc: "An onsite-style day: two harder Mediums, then a Hard.",
+  { id: "bigtech", name: "Big tech", desc: "An onsite-style day: two harder Mediums, then a Hard.",
     probs: [["longest-repeating-character-replacement", 25], ["longest-increasing-subsequence", 30], ["merge-k-sorted-lists", 35]] },
 ];

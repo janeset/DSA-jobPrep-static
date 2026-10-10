@@ -2,7 +2,7 @@
 
 Data structures and algorithms prep for coding interviews at software jobs around Toronto and
 Kitchener-Waterloo: a 12-week plan, one pattern family at a time. No build step, no backend:
-plain HTML, CSS and JavaScript. Part of [Job Preps](../README.md).
+plain HTML, CSS and JavaScript. One of four Job Preps apps, each in its own repo: DSA Prep, Cloud Prep, AI / LLM Prep and System Design Prep.
 
 ## Run it
 

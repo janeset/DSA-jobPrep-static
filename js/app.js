@@ -477,6 +477,7 @@ function refPython(id) {
       <div class="row"><button class="btn small" data-example="${i}">Try this example in the scratchpad</button>
       <a class="btn small" href="${yt(LESSON_YT[l.id])}" target="_blank" rel="noopener">More videos</a></div>
       ${vids(EXPLAINERS.python[l.id])}</div>
+    ${prPractice(l.practice, "py")}
     ${l.exercises.map((ex, j) => { const eid = l.id + "-" + j; return `<div class="card"><h3 class="ex-title">Exercise ${j + 1}${S.ref[eid] ? ' <span class="badge done">Passed</span>' : ""}</h3>
       <p>${esc(ex.prompt)}</p><textarea id="ex-${eid}" class="ex" rows="${Math.max(5, ex.starter.split("\n").length + 2)}" spellcheck="false">${esc(S.code["ex:" + eid] ?? ex.starter)}</textarea>
       <div class="row"><button class="btn primary small" data-ex="${i}:${j}">Run tests</button><button class="btn small" data-exreset="${i}:${j}">Reset</button></div>
@@ -678,6 +679,7 @@ function refLang(lang, id) {
       <a class="btn small" href="${m.compiler}" target="_blank" rel="noopener">Open ${m.compilerName} &nearr;</a>
       <a class="btn small" href="${yt(`${m.name === "C#" ? "C# csharp" : "Java"} ${l.title.replace(/^\d+\.\s*/, "")} tutorial`)}" target="_blank" rel="noopener">More videos</a></div>
       ${vids(LANG_VIDEOS[lang][l.id])}</div>
+    ${prPractice(l.practice, lang)}
     ${l.exercises.map((ex, j) => {
       const k = langKey(lang, l.id, j), done = !!S.langDone?.[k];
       return `<div class="card"><div class="section-head"><h3 class="ex-title">Exercise ${j + 1}</h3>${done ? '<span class="badge done">Done</span>' : ""}</div>

@@ -1,6 +1,7 @@
 // Java and C# refresher lessons. Same shape as the Python LESSONS, but exercises carry a
 // reference solution and sample checks instead of auto-run tests (Java/C# can't run in the page).
 // body is trusted HTML written here. Code is Java 17 / C# 10 (.NET 6+) with implicit usings.
+// practice: good vs bad code pairs ({ why, bad, good }), shown after the example.
 
 const JAVA_LESSONS = [
   {
@@ -26,6 +27,21 @@ const JAVA_LESSONS = [
         System.out.println(name + " " + big);
     }
 }`,
+    practice: [
+      { why: "`int` silently wraps around past about 2.1 billion. A sum of many values needs a `long`.",
+        bad: `int total = 0;
+for (int x : big) total += x;    // wraps around silently`,
+        good: `long total = 0;
+for (int x : big) total += x;    // room for big sums` },
+      { why: "Dividing two `int`s drops the remainder before the result is stored, so `double avg = 7 / 2` is 3.0. Make one side a `double` first.",
+        bad: `double avg = sum / count;        // 7 / 2 gives 3.0`,
+        good: `double avg = (double) sum / count;   // 7 / 2 gives 3.5` },
+      { why: "`==` on boxed `Integer`s compares objects. Small values (-128 to 127) happen to be cached, so the bug appears only with bigger numbers.",
+        bad: `Integer a = 1000, b = 1000;
+boolean same = a == b;           // false: two different objects`,
+        good: `Integer a = 1000, b = 1000;
+boolean same = a.equals(b);      // true` },
+    ],
     exercises: [{
       prompt: "Write fizzBuzz(int n) returning a List<String> for 1..n: \"Fizz\" for multiples of 3, \"Buzz\" for 5, \"FizzBuzz\" for both, otherwise the number.",
       starter: `import java.util.*;
@@ -63,6 +79,20 @@ System.out.println(sb.reverse().toString());                  // CBA
 System.out.println("abc".equals("ab" + "c"));                // true (never use ==)
 char c = 'a';
 System.out.println((char) (c + 2));                           // c`,
+    practice: [
+      { why: "`char + char` is integer addition: 'a' + 'b' is 195. Start from a `String` to get text.",
+        bad: `System.out.println(s.charAt(0) + s.charAt(1));   // prints a number`,
+        good: `System.out.println("" + s.charAt(0) + s.charAt(1));
+// or: String.valueOf(s.charAt(0)) + s.charAt(1)` },
+      { why: "`split` takes a regular expression, where `.` means \"any character\", so splitting on it returns nothing useful. Escape it.",
+        bad: `String[] parts = "10.0.0.1".split(".");     // length 0`,
+        good: `String[] parts = "10.0.0.1".split("\\\\.");   // [10, 0, 0, 1]` },
+      { why: "`String.join` handles the separators for you, with no trailing comma to trim.",
+        bad: `StringBuilder sb = new StringBuilder();
+for (String n : names) sb.append(n).append(", ");
+String list = sb.substring(0, sb.length() - 2);   // breaks on empty`,
+        good: `String list = String.join(", ", names);` },
+    ],
     exercises: [{
       prompt: "Write isPalindrome(String s) that ignores case and non-alphanumeric characters (\"A man, a plan, a canal: Panama\" is true). Use two pointers.",
       starter: `static boolean isPalindrome(String s) {
@@ -118,6 +148,23 @@ System.out.println(list + " " + list.size());                  // [1, 3] 2
 int[][] grid = new int[3][4];      // 3 rows, 4 columns, all 0
 grid[1][2] = 8;
 int[] firstTwo = Arrays.copyOfRange(arr, 0, 2);                // [2, 5]`,
+    practice: [
+      { why: "Printing an array shows its type and address, like `[I@1b6d3586`. `Arrays.toString` shows the contents.",
+        bad: `int[] nums = {3, 1, 2};
+System.out.println(nums);                    // [I@1b6d3586`,
+        good: `int[] nums = {3, 1, 2};
+System.out.println(Arrays.toString(nums));   // [3, 1, 2]` },
+      { why: "`Arrays.asList` on an `int[]` gives a list with one element: the array itself. Box the values through a stream.",
+        bad: `int[] nums = {3, 1, 2};
+List<int[]> list = Arrays.asList(nums);      // one element: the array`,
+        good: `int[] nums = {3, 1, 2};
+List<Integer> list = Arrays.stream(nums).boxed().toList();   // [3, 1, 2]` },
+      { why: "On a `List<Integer>`, `remove(1)` removes the item at index 1, not the value 1. Pass an `Integer` to remove by value.",
+        bad: `List<Integer> ids = new ArrayList<>(List.of(5, 1, 7));
+ids.remove(1);                       // removes index 1: [5, 7]`,
+        good: `List<Integer> ids = new ArrayList<>(List.of(5, 1, 7));
+ids.remove(Integer.valueOf(1));      // removes the value 1: [5, 7]` },
+    ],
     exercises: [{
       prompt: "Write rotateLeft(int[] a, int k) returning a NEW array rotated left by k. k may exceed the length; handle an empty array.",
       starter: `static int[] rotateLeft(int[] a, int k) {
@@ -167,6 +214,26 @@ System.out.println(byLen);                            // {2=[hi, ox], 3=[cat, do
 
 Set<Integer> seen = new HashSet<>();
 System.out.println(seen.add(5) + " " + seen.add(5));  // true false`,
+    practice: [
+      { why: "`entrySet()` gives each key and value together, instead of a second lookup per key.",
+        bad: `for (String name : ages.keySet()) {
+    System.out.println(name + " " + ages.get(name));   // a second lookup
+}`,
+        good: `for (Map.Entry<String, Integer> e : ages.entrySet()) {
+    System.out.println(e.getKey() + " " + e.getValue());
+}` },
+      { why: "`get` returns `null` for a missing key, and unboxing `null` into an `int` throws. `getOrDefault` gives a safe value.",
+        bad: `int count = counts.get(word);   // NullPointerException if missing`,
+        good: `int count = counts.getOrDefault(word, 0);` },
+      { why: "A class key without `equals` and `hashCode` compares by identity, so an equal key built later isn't found. A record gets both for free.",
+        bad: `class Point {
+    final int x, y;
+    Point(int x, int y) { this.x = x; this.y = y; }
+}
+// seen.contains(new Point(1, 2)) is false even after adding one`,
+        good: `record Point(int x, int y) { }      // equals and hashCode included
+// seen.contains(new Point(1, 2)) is true after adding one` },
+    ],
     exercises: [{
       prompt: "Write wordCount(String text) returning a Map of lowercase word -> count, splitting on spaces.",
       starter: `import java.util.*;
@@ -227,6 +294,38 @@ public class Main {
         System.out.println(a + " " + list + " " + total(1, 2, 3) + " " + area(2, 3));  // 5 [1] 6 6
     }
 }`,
+    practice: [
+      { why: "Java passes copies of primitive values, so swapping parameters changes nothing for the caller. Swap inside the array you were given.",
+        bad: `void swap(int a, int b) {
+    int t = a; a = b; b = t;         // only the copies swap
+}`,
+        good: `void swap(int[] arr, int i, int j) {
+    int t = arr[i]; arr[i] = arr[j]; arr[j] = t;   // the caller's array
+}` },
+      { why: "Returning `null` for \"no results\" forces every caller to check for it. An empty list just works in loops and streams.",
+        bad: `List<String> findTags(String text) {
+    if (text.isEmpty()) return null;   // every caller must check
+    return List.of(text.split(" "));
+}`,
+        good: `List<String> findTags(String text) {
+    if (text.isEmpty()) return List.of();   // empty, never null
+    return List.of(text.split(" "));
+}` },
+      { why: "Once you know the answer, return it. A flag variable keeps the loop running for nothing and adds state to track.",
+        bad: `boolean contains(int[] nums, int target) {
+    boolean found = false;
+    for (int x : nums) {
+        if (x == target) found = true;   // keeps looping
+    }
+    return found;
+}`,
+        good: `boolean contains(int[] nums, int target) {
+    for (int x : nums) {
+        if (x == target) return true;    // stop here
+    }
+    return false;
+}` },
+    ],
     exercises: [{
       prompt: "Write maxOf(int first, int... rest) returning the largest argument (at least one is required).",
       starter: `static int maxOf(int first, int... rest) {
@@ -283,6 +382,51 @@ public class Main {
         System.out.println(pts.size());                    // 1 (records compare by value)
     }
 }`,
+    practice: [
+      { why: "A record writes the constructor, accessors, `equals`, `hashCode` and `toString` for a plain data class.",
+        bad: `class Point {
+    private final int x, y;
+    Point(int x, int y) { this.x = x; this.y = y; }
+    int getX() { return x; }
+    int getY() { return y; }
+    // plus equals, hashCode and toString by hand...
+}`,
+        good: `record Point(int x, int y) { }` },
+      { why: "`equals(Point p)` is a new overload, not an override, so collections still use the old `equals(Object)`. `@Override` makes the compiler catch it.",
+        bad: `class Point {
+    int x, y;
+    public boolean equals(Point p) {     // overloads, doesn't override
+        return x == p.x && y == p.y;
+    }
+}`,
+        good: `class Point {
+    int x, y;
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Point p && x == p.x && y == p.y;
+    }
+    @Override
+    public int hashCode() { return Objects.hash(x, y); }
+}` },
+      { why: "Overriding `equals` without `hashCode` breaks `HashMap` and `HashSet`: equal objects land in different buckets. Override both, always.",
+        bad: `class Tag {
+    String name;
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Tag t && name.equals(t.name);
+    }
+    // no hashCode: two equal tags can both end up in a HashSet
+}`,
+        good: `class Tag {
+    String name;
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof Tag t && name.equals(t.name);
+    }
+    @Override
+    public int hashCode() { return name.hashCode(); }
+}` },
+    ],
     exercises: [{
       prompt: "Implement class IntStack with push, pop, peek, isEmpty and size. pop and peek on an empty stack should throw IllegalStateException.",
       starter: `import java.util.*;
@@ -343,6 +487,27 @@ public class Main {
         System.out.println(pq.poll()[0]);                        // 8 (smallest second value)
     }
 }`,
+    practice: [
+      { why: "A raw `List` accepts anything, so a wrong type is only found at run time, as a `ClassCastException`. Generics move the check to compile time.",
+        bad: `List names = new ArrayList();
+names.add(42);                       // compiles
+String first = (String) names.get(0);   // ClassCastException`,
+        good: `List<String> names = new ArrayList<>();
+// names.add(42);                    // compile error: caught early
+String first = names.get(0);` },
+      { why: "`Comparator.comparing` chains sort keys clearly, with no hand-written compare logic to get wrong.",
+        bad: `people.sort((a, b) -> {
+    if (a.age() != b.age()) return a.age() - b.age();
+    return a.name().compareTo(b.name());
+});`,
+        good: `people.sort(Comparator.comparingInt(Person::age)
+        .thenComparing(Person::name));` },
+      { why: "`List.of` makes an immutable list, so `add` throws `UnsupportedOperationException`. Copy it into an `ArrayList` when you need to change it.",
+        bad: `List<String> todo = List.of("write");
+todo.add("test");                    // UnsupportedOperationException`,
+        good: `List<String> todo = new ArrayList<>(List.of("write"));
+todo.add("test");` },
+    ],
     exercises: [{
       prompt: "Write sortWords(List<String> words) returning a new list sorted by length, then alphabetically.",
       starter: `import java.util.*;
@@ -409,6 +574,30 @@ static List<Integer> topKFrequent(int[] nums, int k) {
         }
     }
 }`,
+    practice: [
+      { why: "If anything throws before `close()`, the resource leaks. try-with-resources closes it however the block ends.",
+        bad: `BufferedReader in = new BufferedReader(new FileReader(path));
+String line = in.readLine();         // if this throws...
+in.close();                          // ...this never runs`,
+        good: `try (BufferedReader in = new BufferedReader(new FileReader(path))) {
+    String line = in.readLine();
+}                                    // closed, even after an exception` },
+      { why: "Wrapping an exception without passing the original loses the real cause from the stack trace. Pass it as the cause.",
+        bad: `try {
+    load(path);
+} catch (IOException e) {
+    throw new RuntimeException("load failed");      // cause lost
+}`,
+        good: `try {
+    load(path);
+} catch (IOException e) {
+    throw new RuntimeException("load failed: " + path, e);   // cause kept
+}` },
+      { why: "`Optional.get()` on an empty value throws a vague `NoSuchElementException`. Say what to do when it's missing.",
+        bad: `User u = findUser(id).get();         // NoSuchElementException`,
+        good: `User u = findUser(id)
+    .orElseThrow(() -> new IllegalArgumentException("no user " + id));` },
+    ],
     exercises: [{
       prompt: "Write safeDivide(double a, double b) returning a / b, or null when b is 0 (return type Double).",
       starter: `static Double safeDivide(double a, double b) {
@@ -456,6 +645,22 @@ Map<Integer, Long> byLength = Stream.of("hi", "cat", "ox")
         .collect(Collectors.groupingBy(String::length, Collectors.counting()));  // {2=2, 3=1}
 
 int[] squares = IntStream.range(0, 5).map(i -> i * i).toArray();   // [0, 1, 4, 9, 16]`,
+    practice: [
+      { why: "A stream that adds to an outside list from `forEach` is a loop in disguise and breaks if the stream runs in parallel. Map and collect instead.",
+        bad: `List<Integer> doubled = new ArrayList<>();
+nums.stream().forEach(x -> doubled.add(x * 2));   // side effect`,
+        good: `List<Integer> doubled = nums.stream().map(x -> x * 2).toList();` },
+      { why: "`anyMatch` says what you're asking and stops at the first match, while `count()` checks every item.",
+        bad: `boolean hasAdult = people.stream().filter(p -> p.age() >= 18).count() > 0;`,
+        good: `boolean hasAdult = people.stream().anyMatch(p -> p.age() >= 18);` },
+      { why: "`Collectors.groupingBy` builds the map of lists in one step.",
+        bad: `Map<Integer, List<String>> byLength = new HashMap<>();
+for (String w : words) {
+    byLength.computeIfAbsent(w.length(), k -> new ArrayList<>()).add(w);
+}`,
+        good: `Map<Integer, List<String>> byLength = words.stream()
+    .collect(Collectors.groupingBy(String::length));` },
+    ],
     exercises: [{
       prompt: "Write squaresOfEvens(List<Integer> nums) using a stream.",
       starter: `import java.util.*;
@@ -515,6 +720,55 @@ static String joinUpper(List<String> words) {
         System.out.println(big + 1);          // -2147483648: int overflow wraps
     }
 }`,
+    practice: [
+      { why: "Building a `String` key like `i + \",\" + j` for every call allocates and hashes text. When states are small integers, a 2-D array is much faster.",
+        bad: `Map<String, Integer> memo = new HashMap<>();
+
+int paths(int i, int j) {
+    if (i == 0 || j == 0) return 1;
+    String key = i + "," + j;                 // a new string per call
+    if (memo.containsKey(key)) return memo.get(key);
+    int r = paths(i - 1, j) + paths(i, j - 1);
+    memo.put(key, r);
+    return r;
+}`,
+        good: `int[][] memo = new int[101][101];           // 0 = not computed yet
+
+int paths(int i, int j) {
+    if (i == 0 || j == 0) return 1;
+    if (memo[i][j] != 0) return memo[i][j];
+    return memo[i][j] = paths(i - 1, j) + paths(i, j - 1);
+}` },
+      { why: "Copying the path into a new list on every call costs O(n) each time. Add, recurse, remove, and copy only when you keep a result.",
+        bad: `void subsets(int[] nums, int i, List<Integer> path,
+             List<List<Integer>> res) {
+    if (i == nums.length) { res.add(path); return; }
+    List<Integer> withX = new ArrayList<>(path);   // a copy per call
+    withX.add(nums[i]);
+    subsets(nums, i + 1, withX, res);
+    subsets(nums, i + 1, path, res);
+}`,
+        good: `void subsets(int[] nums, int i, List<Integer> path,
+             List<List<Integer>> res) {
+    // copy only when keeping a result
+    if (i == nums.length) { res.add(new ArrayList<>(path)); return; }
+    path.add(nums[i]);
+    subsets(nums, i + 1, path, res);
+    path.remove(path.size() - 1);                  // undo
+    subsets(nums, i + 1, path, res);
+}` },
+      { why: "Fibonacci numbers pass `int`'s limit at fib(47). Use `long` (good to fib(92)), or `BigInteger` beyond that.",
+        bad: `int fib(int n) {
+    int a = 0, b = 1;
+    for (int i = 0; i < n; i++) { int t = a + b; a = b; b = t; }
+    return a;                        // wrong from fib(47) on
+}`,
+        good: `long fib(int n) {
+    long a = 0, b = 1;
+    for (int i = 0; i < n; i++) { long t = a + b; a = b; b = t; }
+    return a;                        // correct up to fib(92)
+}` },
+    ],
     exercises: [{
       prompt: "Write sumDigits(int n) recursively for n >= 0 (1234 -> 10).",
       starter: `static int sumDigits(int n) {
@@ -570,6 +824,40 @@ class MathUtilsTest {
         assertThrows(IllegalArgumentException.class, () -> MathUtils.clamp(1, 10, 0));
     }
 }`,
+    practice: [
+      { why: "When `assertTrue` fails it only says \"expected true\". `assertEquals(expected, actual)` shows both values.",
+        bad: `@Test
+void sumsList() {
+    assertTrue(total(List.of(1, 2, 3)) == 6);   // fails with no detail
+}`,
+        good: `@Test
+void sumsList() {
+    assertEquals(6, total(List.of(1, 2, 3)));   // expected 6 but was 5
+}` },
+      { why: "A try/fail/catch block is long and easy to get wrong. `assertThrows` states the expectation and returns the exception to inspect.",
+        bad: `@Test
+void rejectsNegativeAge() {
+    try {
+        setAge(-1);
+        fail("expected an exception");
+    } catch (IllegalArgumentException e) {
+        // passed
+    }
+}`,
+        good: `@Test
+void rejectsNegativeAge() {
+    assertThrows(IllegalArgumentException.class, () -> setAge(-1));
+}` },
+      { why: "Copy-pasted tests drift apart. A parameterized test runs the same check over a table of cases, each reported separately.",
+        bad: `@Test void emptyIsZero() { assertEquals(0, total(List.of())); }
+@Test void oneItem() { assertEquals(5, total(List.of(5))); }
+@Test void negatives() { assertEquals(0, total(List.of(-1, 1))); }`,
+        good: `@ParameterizedTest
+@CsvSource({"'', 0", "'5', 5", "'-1 1', 0"})
+void totals(String input, int expected) {
+    assertEquals(expected, total(parse(input)));
+}` },
+    ],
     exercises: [{
       prompt: "Implement MathUtils so the tests above pass: isLeapYear(int y) (divisible by 4, except centuries unless divisible by 400), and clamp(int x, int lo, int hi) that throws IllegalArgumentException when lo > hi.",
       starter: `class MathUtils {
@@ -619,6 +907,30 @@ Console.WriteLine($"{name} {big}");
 int max = int.MaxValue;
 Console.WriteLine(max + 1);                                 // -2147483648: wraps
 // checked(max + 1) would throw OverflowException instead`,
+    practice: [
+      { why: "`int` silently wraps around past about 2.1 billion. A sum of many values needs a `long`.",
+        bad: `int total = 0;
+foreach (int x in big) total += x;   // wraps around silently`,
+        good: `long total = 0;
+foreach (int x in big) total += x;   // room for big sums` },
+      { why: "Dividing two `int`s drops the remainder before the result is stored, so `double avg = 7 / 2` is 3. Make one side a `double` first.",
+        bad: `double avg = sum / count;            // 7 / 2 gives 3`,
+        good: `double avg = (double)sum / count;    // 7 / 2 gives 3.5` },
+      { why: "A switch expression returns a value directly: shorter than a switch statement, and the compiler warns when a case is missing.",
+        bad: `string label;
+switch (code)
+{
+    case 200: label = "OK"; break;
+    case 404: label = "Not found"; break;
+    default: label = "Error"; break;
+}`,
+        good: `string label = code switch
+{
+    200 => "OK",
+    404 => "Not found",
+    _ => "Error",
+};` },
+    ],
     exercises: [{
       prompt: "Write FizzBuzz(int n) returning a List<string> for 1..n: \"Fizz\" for multiples of 3, \"Buzz\" for 5, \"FizzBuzz\" for both, otherwise the number.",
       starter: `static List<string> FizzBuzz(int n)
@@ -662,6 +974,20 @@ Console.WriteLine("abc" == "ab" + "c");                       // True: == compar
 Console.WriteLine(string.Equals("Hi", "hi", StringComparison.OrdinalIgnoreCase));  // True
 char c = 'a';
 Console.WriteLine((char)(c + 2));                             // c`,
+    practice: [
+      { why: "`string.IsNullOrEmpty` (or `IsNullOrWhiteSpace`) covers the null and empty cases in one call.",
+        bad: `if (name == null || name == "" || name.Trim() == "")
+    name = "guest";`,
+        good: `if (string.IsNullOrWhiteSpace(name))
+    name = "guest";` },
+      { why: "String interpolation puts each value where it appears, with no `+` chains or `ToString` calls.",
+        bad: `string msg = "Hi " + name + ", you have " + count.ToString()
+    + " new messages";`,
+        good: `string msg = $"Hi {name}, you have {count} new messages";` },
+      { why: "`Substring` takes a length, not an end index, which is a classic off-by-one. A range `s[start..end]` takes the end index directly.",
+        bad: `string middle = s.Substring(2, 5);   // 5 characters, not "up to 5"`,
+        good: `string middle = s[2..5];             // index 2 up to (not including) 5` },
+    ],
     exercises: [{
       prompt: "Write IsPalindrome(string s) that ignores case and non-alphanumeric characters. Use two pointers.",
       starter: `static bool IsPalindrome(string s)
@@ -719,6 +1045,29 @@ int[,] grid = new int[3, 4];     // rectangular: grid[1, 2]
 int[][] jagged = new int[3][];   // array of arrays: jagged[1][2]
 int[] firstTwo = arr[..2];       // { 2, 5 }
 int last = arr[^1];              // 9`,
+    practice: [
+      { why: "Printing an array shows its type name, `System.Int32[]`. `string.Join` shows the contents.",
+        bad: `int[] nums = { 3, 1, 2 };
+Console.WriteLine(nums);                         // System.Int32[]`,
+        good: `int[] nums = { 3, 1, 2 };
+Console.WriteLine(string.Join(", ", nums));      // 3, 1, 2` },
+      { why: "Copying element by element is more code and easy to get wrong. The built-ins copy in one call.",
+        bad: `int[] copy = new int[nums.Length];
+for (int i = 0; i < nums.Length; i++)
+    copy[i] = nums[i];`,
+        good: `int[] copy = (int[])nums.Clone();   // or nums.ToArray()` },
+      { why: "`Array.Resize` allocates a new array and copies everything, so growing by one each time is O(n²). `List<T>` grows in amortized O(1).",
+        bad: `int[] evens = new int[0];
+foreach (int x in nums)
+{
+    if (x % 2 != 0) continue;
+    Array.Resize(ref evens, evens.Length + 1);   // copies everything
+    evens[^1] = x;
+}`,
+        good: `var evens = new List<int>();
+foreach (int x in nums)
+    if (x % 2 == 0) evens.Add(x);                // amortized O(1)` },
+    ],
     exercises: [{
       prompt: "Write RotateLeft(int[] a, int k) returning a NEW array rotated left by k. Handle k > length and an empty array.",
       starter: `static int[] RotateLeft(int[] a, int k)
@@ -777,6 +1126,26 @@ foreach (var (len, words) in byLen)
 
 var seen = new HashSet<int>();
 Console.WriteLine($"{seen.Add(5)} {seen.Add(5)}");        // True False`,
+    practice: [
+      { why: "`ContainsKey` then the indexer looks the key up twice. `GetValueOrDefault` (or `TryGetValue`) does it once.",
+        bad: `int count = 0;
+if (counts.ContainsKey(word))
+    count = counts[word];                // a second lookup`,
+        good: `int count = counts.GetValueOrDefault(word);   // 0 when missing` },
+      { why: "Deconstructing each pair gives you the key and value together, without a second lookup per key.",
+        bad: `foreach (var name in ages.Keys)
+    Console.WriteLine($"{name} {ages[name]}");   // a second lookup`,
+        good: `foreach (var (name, age) in ages)
+    Console.WriteLine($"{name} {age}");` },
+      { why: "A class key without `Equals` and `GetHashCode` compares by reference, so an equal key built later isn't found. A record gets both for free.",
+        bad: `class Point
+{
+    public int X, Y;
+}
+// seen.Contains(new Point { X = 1, Y = 2 }) is false even after adding one`,
+        good: `record Point(int X, int Y);   // Equals and GetHashCode included
+// seen.Contains(new Point(1, 2)) is true after adding one` },
+    ],
     exercises: [{
       prompt: "Write WordCount(string text) returning a Dictionary of lowercase word -> count.",
       starter: `static Dictionary<string, int> WordCount(string text)
@@ -828,6 +1197,24 @@ static void AddItem(List<int> list) => list.Add(1);        // same list object
 static int Total(params int[] nums) => nums.Sum();         // LINQ Sum
 static double Area(double w, double h = 1) => w * h;       // optional parameter
 static (int Min, int Max) MinMax(int[] arr) => (arr.Min(), arr.Max());   // tuple return`,
+    practice: [
+      { why: "Several `out` parameters make calls clumsy. Return a named tuple and let the caller deconstruct it.",
+        bad: `void MinMax(int[] nums, out int min, out int max)
+{
+    min = nums.Min();
+    max = nums.Max();
+}
+// MinMax(nums, out int lo, out int hi);`,
+        good: `(int Min, int Max) MinMax(int[] nums) => (nums.Min(), nums.Max());
+// var (lo, hi) = MinMax(nums);` },
+      { why: "Overloads that only fill in a default are boilerplate. An optional parameter covers them in one method.",
+        bad: `int Area(int width) => Area(width, 1);
+int Area(int width, int height) => width * height;`,
+        good: `int Area(int width, int height = 1) => width * height;` },
+      { why: "`true, false` at the call site says nothing. Named arguments make each value explain itself.",
+        bad: `Resize(image, 800, true, false);                   // true what?`,
+        good: `Resize(image, 800, keepRatio: true, upscale: false);` },
+    ],
     exercises: [{
       prompt: "Write MaxOf(int first, params int[] rest) returning the largest argument.",
       starter: `static int MaxOf(int first, params int[] rest)
@@ -876,6 +1263,40 @@ class Circle : IShape
 }
 
 record Point(int X, int Y);                      // value equality, ToString for free`,
+    practice: [
+      { why: "An auto-property does the same as a hand-written backing field with a getter and setter, in one line.",
+        bad: `class User
+{
+    private string name;
+    public string GetName() { return name; }
+    public void SetName(string value) { name = value; }
+}`,
+        good: `class User
+{
+    public string Name { get; set; }
+}` },
+      { why: "A record writes the constructor, value equality, `GetHashCode` and a readable `ToString` for a plain data class.",
+        bad: `class Point
+{
+    public int X { get; }
+    public int Y { get; }
+    public Point(int x, int y) { X = x; Y = y; }
+    public override bool Equals(object o) =>
+        o is Point p && p.X == X && p.Y == Y;
+    public override int GetHashCode() => HashCode.Combine(X, Y);
+}`,
+        good: `record Point(int X, int Y);` },
+      { why: "A public setter lets anyone change the value later, after your checks ran. `init` allows setting it only while the object is created.",
+        bad: `class Order
+{
+    public decimal Total { get; set; }   // can be changed any time
+}`,
+        good: `class Order
+{
+    public decimal Total { get; init; }  // set once, at creation
+}
+// var order = new Order { Total = 9.99m };` },
+    ],
     exercises: [{
       prompt: "Implement class IntStack with Push, Pop, Peek, Count and IsEmpty. Pop and Peek on an empty stack should throw InvalidOperationException.",
       starter: `class IntStack
@@ -927,6 +1348,29 @@ static T MaxOf<T>(List<T> items) where T : IComparable<T>   // generic method
     foreach (T x in items) if (x.CompareTo(best) > 0) best = x;
     return best;
 }`,
+    practice: [
+      { why: "The old `ArrayList` holds `object`, so every read needs a cast and mistakes show up at run time. `List<T>` is checked at compile time.",
+        bad: `var names = new System.Collections.ArrayList();
+names.Add(42);                        // compiles
+string first = (string)names[0];      // InvalidCastException`,
+        good: `var names = new List<string>();
+// names.Add(42);                     // compile error: caught early
+string first = names[0];` },
+      { why: "`OrderBy(...).ThenBy(...)` states the sort keys clearly, with no hand-written comparison to get wrong.",
+        bad: `people.Sort((a, b) =>
+{
+    if (a.Age != b.Age) return a.Age - b.Age;
+    return string.Compare(a.Name, b.Name);
+});`,
+        good: `var sorted = people.OrderBy(p => p.Age).ThenBy(p => p.Name).ToList();` },
+      { why: "Taking `object` throws away the type: callers need casts, and value types get boxed. A generic method with a constraint keeps the type.",
+        bad: `object Max(object a, object b) =>
+    ((IComparable)a).CompareTo(b) >= 0 ? a : b;
+// int m = (int)Max(3, 7);`,
+        good: `T Max<T>(T a, T b) where T : IComparable<T> =>
+    a.CompareTo(b) >= 0 ? a : b;
+// int m = Max(3, 7);` },
+    ],
     exercises: [{
       prompt: "Write SortWords(List<string> words) returning a new list sorted by length, then alphabetically.",
       starter: `static List<string> SortWords(List<string> words)
@@ -1004,6 +1448,44 @@ static int Divide(int a, int b)
     if (b == 0) throw new ArgumentException("b must not be 0", nameof(b));
     return a / b;
 }`,
+    practice: [
+      { why: "`throw ex;` restarts the stack trace at this line, hiding where the error really happened. A bare `throw;` rethrows it unchanged.",
+        bad: `try
+{
+    Load(path);
+}
+catch (IOException ex)
+{
+    Log(ex);
+    throw ex;                // stack trace now starts here
+}`,
+        good: `try
+{
+    Load(path);
+}
+catch (IOException ex)
+{
+    Log(ex);
+    throw;                   // original stack trace kept
+}` },
+      { why: "The null-conditional `?.` and null-coalescing `??` operators replace a chain of null checks.",
+        bad: `int length = 0;
+if (user != null && user.Name != null)
+    length = user.Name.Length;`,
+        good: `int length = user?.Name?.Length ?? 0;` },
+      { why: "A `using` declaration disposes the object at the end of the scope, even after an exception, with no try/finally to write.",
+        bad: `var reader = new StreamReader(path);
+try
+{
+    Console.WriteLine(reader.ReadLine());
+}
+finally
+{
+    reader.Dispose();
+}`,
+        good: `using var reader = new StreamReader(path);   // disposed at the end of scope
+Console.WriteLine(reader.ReadLine());` },
+    ],
     exercises: [{
       prompt: "Write SafeDivide(double a, double b) returning a / b, or null when b is 0 (return type double?).",
       starter: `static double? SafeDivide(double a, double b)
@@ -1041,6 +1523,21 @@ var byLength = new[] { "hi", "cat", "ox" }
 int[] squares = Enumerable.Range(0, 5).Select(i => i * i).ToArray();          // 0, 1, 4, 9, 16
 Func<int, int> twice = x => x * 2;
 Console.WriteLine($"{string.Join(", ", evenSquares)} {total} {anyBig} {twice(4)}");  // 4, 16, 36 21 True 8`,
+    practice: [
+      { why: "`Any` says what you're asking and stops at the first match, while `Count()` walks the whole sequence.",
+        bad: `bool hasAdult = people.Where(p => p.Age >= 18).Count() > 0;`,
+        good: `bool hasAdult = people.Any(p => p.Age >= 18);` },
+      { why: "A LINQ query is lazy: it runs again every time you enumerate it. Materialise it once with `ToList()` when you'll use it more than once.",
+        bad: `var adults = people.Where(p => IsAdult(p));   // not run yet
+Console.WriteLine(adults.Count());            // runs the query
+foreach (var a in adults) Console.WriteLine(a.Name);   // runs it again`,
+        good: `var adults = people.Where(p => IsAdult(p)).ToList();   // runs once
+Console.WriteLine(adults.Count);
+foreach (var a in adults) Console.WriteLine(a.Name);` },
+      { why: "Sorting everything to take the first item is O(n log n). `MinBy` / `MaxBy` (.NET 6+) find it in one pass.",
+        bad: `var youngest = people.OrderBy(p => p.Age).First();   // sorts everything`,
+        good: `var youngest = people.MinBy(p => p.Age);             // one pass` },
+    ],
     exercises: [{
       prompt: "Write SquaresOfEvens(List<int> nums) using LINQ.",
       starter: `static List<int> SquaresOfEvens(List<int> nums)
@@ -1084,6 +1581,61 @@ static long Power(long x, int n)            // fast exponentiation: O(log n)
     long half = Power(x, n / 2);
     return n % 2 == 0 ? half * half : half * half * x;
 }`,
+    practice: [
+      { why: "Building a string key like `$\"{i},{j}\"` on every call allocates and hashes text. When states are small integers, a 2-D array is much faster.",
+        bad: `Dictionary<string, int> memo = new();
+
+int Paths(int i, int j)
+{
+    if (i == 0 || j == 0) return 1;
+    string key = $"{i},{j}";                  // a new string per call
+    if (memo.TryGetValue(key, out int known)) return known;
+    return memo[key] = Paths(i - 1, j) + Paths(i, j - 1);
+}`,
+        good: `int[,] memo = new int[101, 101];            // 0 = not computed yet
+
+int Paths(int i, int j)
+{
+    if (i == 0 || j == 0) return 1;
+    if (memo[i, j] != 0) return memo[i, j];
+    return memo[i, j] = Paths(i - 1, j) + Paths(i, j - 1);
+}` },
+      { why: "A `StackOverflowException` can't be caught: it ends the program. For inputs that may be deep, use an explicit `Stack<T>`.",
+        bad: `int CountNodes(TreeNode node) =>
+    node == null ? 0 : 1 + CountNodes(node.left) + CountNodes(node.right);
+// a 100,000-deep skewed tree crashes the process`,
+        good: `int CountNodes(TreeNode root)
+{
+    int count = 0;
+    var stack = new Stack<TreeNode>();
+    if (root != null) stack.Push(root);
+    while (stack.Count > 0)
+    {
+        var node = stack.Pop();
+        count++;
+        if (node.left != null) stack.Push(node.left);
+        if (node.right != null) stack.Push(node.right);
+    }
+    return count;
+}` },
+      { why: "Copying the path into a new list on every call costs O(n) each time. Add, recurse, remove, and copy only when you keep a result.",
+        bad: `void Subsets(int[] nums, int i, List<int> path, List<List<int>> res)
+{
+    if (i == nums.Length) { res.Add(path); return; }
+    var withX = new List<int>(path) { nums[i] };   // a copy per call
+    Subsets(nums, i + 1, withX, res);
+    Subsets(nums, i + 1, path, res);
+}`,
+        good: `void Subsets(int[] nums, int i, List<int> path, List<List<int>> res)
+{
+    // copy only when keeping a result
+    if (i == nums.Length) { res.Add(new List<int>(path)); return; }
+    path.Add(nums[i]);
+    Subsets(nums, i + 1, path, res);
+    path.RemoveAt(path.Count - 1);                 // undo
+    Subsets(nums, i + 1, path, res);
+}` },
+    ],
     exercises: [{
       prompt: "Write SumDigits(int n) recursively for n >= 0 (1234 -> 10).",
       starter: `static int SumDigits(int n)
@@ -1143,6 +1695,43 @@ public class MathUtilsTests
         Assert.Throws<ArgumentException>(() => MathUtils.Clamp(1, 10, 0));
     }
 }`,
+    practice: [
+      { why: "When `Assert.True` fails it only says the condition was false. `Assert.Equal(expected, actual)` shows both values.",
+        bad: `[Fact]
+public void SumsList()
+{
+    Assert.True(Total(new[] { 1, 2, 3 }) == 6);   // fails with no detail
+}`,
+        good: `[Fact]
+public void SumsList()
+{
+    Assert.Equal(6, Total(new[] { 1, 2, 3 }));    // Expected: 6, Actual: 5
+}` },
+      { why: "A try/catch with a flag is long and easy to get wrong. `Assert.Throws` states the expectation and returns the exception to inspect.",
+        bad: `[Fact]
+public void RejectsNegativeAge()
+{
+    bool threw = false;
+    try { SetAge(-1); }
+    catch (ArgumentOutOfRangeException) { threw = true; }
+    Assert.True(threw);
+}`,
+        good: `[Fact]
+public void RejectsNegativeAge()
+{
+    Assert.Throws<ArgumentOutOfRangeException>(() => SetAge(-1));
+}` },
+      { why: "Copy-pasted tests drift apart. A `[Theory]` runs the same check over a table of cases, each reported separately.",
+        bad: `[Fact] public void EmptyIsZero() => Assert.Equal(0, Total(new int[0]));
+[Fact] public void OneItem() => Assert.Equal(5, Total(new[] { 5 }));
+[Fact] public void Negatives() => Assert.Equal(0, Total(new[] { -1, 1 }));`,
+        good: `[Theory]
+[InlineData(new int[0], 0)]
+[InlineData(new[] { 5 }, 5)]
+[InlineData(new[] { -1, 1 }, 0)]
+public void Totals(int[] input, int expected) =>
+    Assert.Equal(expected, Total(input));` },
+    ],
     exercises: [{
       prompt: "Implement MathUtils so the tests above pass: IsLeapYear(int y), and Clamp(int x, int lo, int hi) that throws ArgumentException when lo > hi.",
       starter: `public static class MathUtils

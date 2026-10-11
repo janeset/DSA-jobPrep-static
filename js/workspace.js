@@ -10,6 +10,31 @@ const hintsFor = (p) => [`The pattern here is <b>${esc(CATS[p.c])}</b>. If it is
 const hintsShown = (slug) => (S.hints || {})[slug] || 0;
 const isRevealed = (slug) => !!(views._rev || {})[slug];
 
+// ---------- content loaded on demand ----------
+// Solutions, tests and prompts (about 325 KB) are only needed by the workspace, the interview's
+// coding rounds and search, so they load the first time one of those needs them, not on every page.
+// Nothing may touch SOL, TESTS, PROMPT or HINTS until contentReady is true.
+const CONTENT_FILES = ["data/solutions/solutions1.js", "data/solutions/solutions2.js", "data/solutions/solutions3.js",
+  "data/solutions/solutions4.js", "data/prompts.js", "data/tests.js"];
+let contentReady = false, contentLoading = null;
+function loadContent() {
+  if (!contentLoading) {
+    contentLoading = Promise.all(CONTENT_FILES.map((src) => new Promise((res, rej) => {
+      const s = document.createElement("script");
+      s.src = src; s.async = false; // download in parallel, run in order
+      s.onload = res; s.onerror = () => rej(new Error("Couldn't load " + src));
+      document.head.appendChild(s);
+    }))).then(() => { contentReady = true; }, (e) => { contentLoading = null; throw e; });
+  }
+  return contentLoading;
+}
+// Renders `html` now; once the content has loaded, re-renders if `stillHere()` says the page is still open.
+function whenContent(stillHere, html) {
+  loadContent().then(() => { if (stillHere()) rerender(); }, () => { if (stillHere()) { const v = $("#view .content-wait"); if (v) v.textContent = "Couldn't load the problem files. Check your connection and refresh."; } });
+  return html;
+}
+const contentWait = () => `<div class="card empty content-wait"><span class="spinner" aria-hidden="true"></span> Loading…</div>`;
+
 // ---------- timer + python ----------
 let timerId = null, timerSec = 0, pyodide = null;
 function fmt(s) { return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
@@ -46,6 +71,8 @@ function openWorkspace(slug, reveal) {
 
 // ---------- the page ----------
 function workspace(slug) {
+  if (!contentReady) return whenContent(() => tab === "problems" && views._ws === slug, contentWait());
+  warmPython();
   const p = probBySlug(slug);
   const code = S.code[slug] ?? (p ? starterFor(p) : "# Scratchpad: try anything here. Use print() to see output.\n\n");
   const editor = `<div class="card ws-editor"><div class="row between" style="margin-bottom:10px"><h3 style="margin:0">Your code <span class="muted" style="font-weight:400">Python</span></h3>

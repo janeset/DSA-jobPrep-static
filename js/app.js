@@ -460,6 +460,7 @@ const views = {
 
 // ---------- learn: content for each sidebar item ----------
 function refPython(id) {
+  warmPython(); // the exercises below run Python
   const i = LESSONS.findIndex((l) => l.id === id), l = LESSONS[i];
   const done = l.exercises.filter((_, j) => S.ref[l.id + "-" + j]).length;
   return `<div class="label">Python</div><h2>${esc(l.title.replace(/^\d+\.\s*/, ""))}</h2>
@@ -782,3 +783,5 @@ document.addEventListener("input", (e) => {
 applyTheme();
 if (location.hash.length > 2) applyPath(location.hash);
 render();
+// Offline support and fast repeat visits (sw.js); service workers need http, so not as a file.
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});

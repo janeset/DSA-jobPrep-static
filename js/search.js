@@ -23,7 +23,7 @@ function buildSearchIndex() {
   const add = (type, title, sub, text, open) => out.push({ type, title, sub, open, hay: (title + " " + sub + " " + text).toLowerCase(), text });
 
   // DSA
-  PROBLEMS.forEach((p) => add("problem", p.t, `${CATS[p.c]} · ${DIFF[p.d]}`, PROMPT[p.s] ? PROMPT[p.s].s : "", () => openWorkspace(p.s)));
+  PROBLEMS.forEach((p) => add("problem", p.t, `${CATS[p.c]} · ${DIFF[p.d]}`, contentReady && PROMPT[p.s] ? PROMPT[p.s].s : "", () => openWorkspace(p.s)));
   ASSESSMENTS.forEach((a) => add("interview", "Assessment: " + a.name, `${a.probs.length} questions · ${a.probs.reduce((n, [, m]) => n + m, 0)} min`, a.desc + " timed assessment test", () => go("interview:assess")));
   Object.keys(NOTES).forEach((k) => add("refresher", CATS[k], "Algorithm pattern", NOTES[k].spot + " " + NOTES[k].how, () => { S.refSel = "pat:" + k; go("learn"); }));
   const ref = (key, title, sub, text) => add("refresher", title, sub, text, () => { S.refSel = key; go("learn"); });
@@ -110,6 +110,8 @@ function openSearch() {
   }
   dlg.showModal();
   const inp = $("#gs-q", dlg); inp.select(); drawSearch(inp.value);
+  // Problem summaries come with the on-demand content (js/workspace.js): rebuild the index once it's in.
+  if (!contentReady) loadContent().then(() => { searchIndex = null; if (dlg.open) drawSearch(inp.value); }, () => {});
 }
 function drawSearch(q) {
   const box = $("#gs-res");

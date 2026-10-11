@@ -3,7 +3,8 @@
 // blocks and the code editors. highlight.js splits code into tokens; a few extra passes match
 // Dark+ more closely (control keywords purple, self blue, function calls yellow). Editors get a
 // coloured layer behind a transparent textarea, so typing stays a plain textarea.
-// Without highlight.js (offline), code simply shows uncoloured.
+// highlight.js arrives from js/highlight.js (a module, so after the first render); until then, or
+// without it (offline, or opened as a file), code simply shows uncoloured.
 
 // Dark+ shows flow-control keywords in purple and the rest (def, class, in, and...) in blue.
 const HL_CTRL = new Set("if elif else for while return import from try except finally raise with yield break continue pass as async await del assert switch case default do throw catch goto foreach using".split(" "));
@@ -51,6 +52,7 @@ function enhanceEditor(ta, lang) {
   const sync = () => { layer.scrollTop = ta.scrollTop; layer.scrollLeft = ta.scrollLeft; };
   const paint = () => { layer.innerHTML = hlHtml(ta.value, lang) + "\n"; sync(); };
   ta.addEventListener("input", paint);
+  ta.addEventListener("hl-ready", paint);
   ta.addEventListener("scroll", sync);
   paint();
 }
@@ -59,7 +61,7 @@ function enhanceEditor(ta, lang) {
 function highlightCode(root = document.getElementById("view")) {
   if (!root) return;
   root.querySelectorAll("pre:not(.hl)").forEach((pre) => {
-    if (pre.matches(HL_SKIP) || !pre.textContent.trim()) return;
+    if (!window.hljs || pre.matches(HL_SKIP) || !pre.textContent.trim()) return;
     pre.innerHTML = hlHtml(pre.textContent, hlLang(pre));
     pre.classList.add("hl");
   });
@@ -68,4 +70,10 @@ function highlightCode(root = document.getElementById("view")) {
     const lx = ta.dataset.lx || "";
     enhanceEditor(ta, lx.startsWith("java:") ? "java" : lx.startsWith("cs:") ? "csharp" : "python");
   });
+}
+
+// Called by js/highlight.js once highlight.js has loaded: colour the page as it is now.
+function hlReady() {
+  highlightCode();
+  document.querySelectorAll("textarea.hl-on").forEach((ta) => ta.dispatchEvent(new Event("hl-ready")));
 }

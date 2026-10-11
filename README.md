@@ -10,7 +10,12 @@ plain HTML, CSS and JavaScript. One of four Job Preps apps, each in its own repo
 python -m http.server 5174
 ```
 
-Then visit http://localhost:5174. Opening `index.html` directly also works, but embedded videos need a server.
+Then visit http://localhost:5174. After one visit the app works offline too, Python included (a service
+worker, `sw.js`, keeps a copy). Opening `index.html` directly also works, but without a server there are no
+embedded videos, no speed test, no offline copy and no syntax colours.
+
+To host it, any static host works (GitHub Pages, Netlify...). Pick one that compresses files (gzip or
+brotli; most do): the first visit drops from about 430 KB to about 140 KB.
 
 ## What's inside
 
@@ -47,16 +52,19 @@ solution is stopped instead of freezing the page. Problems where timing can't te
 The speed test needs the app served over http (`python -m http.server`); opened as a file,
 Run tests still checks correctness.
 
-Python exercises are auto-graded in the browser via [Pyodide](https://pyodide.org) (loaded from a
-CDN on first run). Java and C# exercises are self-checked: each has sample cases and a reference
+Python exercises are auto-graded in the browser via [Pyodide](https://pyodide.org) (about 10 MB from a
+CDN, fetched in the background when you open a problem or a Python lesson, then kept by the service worker).
+They run in the same background worker, so an endless loop is stopped after 15 seconds. Java and C# exercises are self-checked: each has sample cases and a reference
 solution, plus links to online compilers.
 
 ## Files
 
 ```
 index.html          the page: top bar, script order, Content Security Policy
+sw.js               service worker: offline copy and fast repeat visits
 css/style.css       design system and the 9 themes
 js/                 app logic
+js/vendor/          highlight.js core + Python / Java / C# (unmodified copies)
 data/               content: plain data in globals, no logic
 data/lessons/       language, Big-O and data-structure lessons
 data/solutions/     reference solutions
@@ -67,9 +75,9 @@ research/           source data for the company lists
 | --- | --- |
 | `js/theme-init.js` | Applies the saved theme before first paint (loaded in `<head>`) |
 | `js/app.js` | State (load, save, checking imported backups), views and logic: Home, the Learn path, Problems, Roadmap, Companies, Settings |
-| `js/workspace.js` | The problem workspace: the Prompt / Hints / Solution / Video tabs, the editor side, the timer and the Pyodide loader |
+| `js/workspace.js` | The problem workspace: the Prompt / Hints / Solution / Video tabs, the editor side, the timer, the Pyodide loader, and `loadContent()`, which fetches the solutions, prompts and tests the first time a page needs them |
 | `js/checker.js`, `js/pyworker.js` | Run tests and lesson exercises: the Python test harness, the background worker (one job at a time), starter code and the results panel |
-| `js/codecolors.js` | Visual Studio Dark+ / Light+ syntax colours for code blocks and the editors (tokens from [highlight.js](https://highlightjs.org), loaded from a CDN) |
+| `js/codecolors.js`, `js/highlight.js` | Visual Studio Dark+ / Light+ syntax colours for code blocks and the editors. Tokens come from [highlight.js](https://highlightjs.org) 11.9.0, self-hosted in `js/vendor/highlight/` with only the three languages the app shows (checked against cdnjs's published hashes) |
 | `js/nav.js` | Top navigation, the Interview sub-tabs and `go()` |
 | `js/router.js` | URL routing (`#/learn/py:basics`, `#/problems/two-sum`...): refresh, Back/Forward and bookmarks |
 | `js/search.js` | Search index (problems and their summaries, lessons, patterns, assessments, your stories) and the Ctrl+K dialog |
@@ -84,8 +92,13 @@ research/           source data for the company lists
 | `data/solutions/solutions1-4.js` | Python solutions for every problem (`solutions4.js` holds the ones added for the company lists) |
 
 Scripts load in the order listed in `index.html`: content first, then the app, with `js/app.js` last.
-The Content Security Policy there only lets the page load its own files and the named CDNs (Google Fonts,
-cdnjs for highlight.js, jsdelivr for Pyodide, YouTube); add a host there before loading anything new.
+`data/solutions/*`, `data/prompts.js` and `data/tests.js` (about 325 KB) aren't in that list: they load on
+demand (`CONTENT_FILES` in `js/workspace.js`), so code must check `contentReady` before using `SOL`,
+`TESTS`, `PROMPT` or `HINTS`.
+
+When you add, rename or remove a file, update `SHELL` in `sw.js` too, so the offline copy stays complete.
+The Content Security Policy in `index.html` only lets the page load its own files, Google Fonts,
+jsdelivr (Pyodide) and YouTube; add a host there before loading anything new.
 
 ## Your data
 

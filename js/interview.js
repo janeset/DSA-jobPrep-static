@@ -193,7 +193,8 @@ function roundBody(m, r) {
   const reveal = (label, html) => r.shown ? `<div class="callout">${html}</div><button class="btn small ghost" data-ivshow>Hide ${label}</button>` : `<button class="btn small" data-ivshow>Show ${label}</button>`;
   const head = (extra = "") => `<div class="label">Round ${m.cur + 1} · ${ROUND_NAMES[r.kind]} · ${r.mins} min</div>${extra}`;
   if (r.kind === "dsa") {
-    const p = PROBLEMS.find((x) => x.s === r.ref), sol = SOL[p.s];
+    // The approach comes from the solutions, which load on demand (js/workspace.js); show the round now, the button once they're in.
+    const p = PROBLEMS.find((x) => x.s === r.ref), sol = contentReady ? SOL[p.s] : whenContent(() => tab === "interview:mock" && S.ivActive === m, null);
     return `<div class="card">${head()}<h2 style="margin:6px 0 8px">${esc(p.t)} ${diffBadge(p.d)}</h2>
       <div class="row" style="margin-bottom:10px"><span class="pill">${esc(CATS[p.c])}</span>${rec(p.s) ? `<span class="pill">${rec(p.s).next <= today() ? "Review due" : "Solved before"}</span>` : '<span class="pill">New to you</span>'}</div>
       <p class="muted">Clarify the input and edge cases, say a brute force and its complexity, then optimise and code it. Talk the whole time.</p>

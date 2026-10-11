@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DSA Prep</title>
 <!-- Only this app's own files and the named CDNs may load; no inline scripts (blocks injected HTML from running). -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; worker-src 'self'; connect-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://i.ytimg.com; frame-src https://www.youtube-nocookie.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect width='28' height='28' rx='8' fill='%235b5bd6'/%3E%3Cpath d='M14 9.5 9.5 17M14 9.5l4.5 7.5' stroke='white' stroke-width='1.8' stroke-linecap='round'/%3E%3Ccircle cx='14' cy='9' r='2.6' fill='white'/%3E%3Ccircle cx='9' cy='18.5' r='2.6' fill='white'/%3E%3Ccircle cx='19' cy='18.5' r='2.6' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +38,8 @@
   <nav id="subnav" class="subnav" aria-label="Section" hidden></nav>
 </header>
 <main id="view"></main>
-<!-- Content: plain data in globals, loaded first -->
+<!-- Content: plain data in globals, loaded first. Solutions, prompts and tests load on demand
+     (loadContent in js/workspace.js). -->
 <script src="data/data.js"></script>
 <script src="data/faang.js"></script>
 <script src="data/lessons/refresher.js"></script>
@@ -46,14 +47,6 @@
 <script src="data/lessons/datastructures.js"></script>
 <script src="data/videos.js"></script>
 <script src="data/lessons/langlessons.js"></script>
-<script src="data/solutions/solutions1.js"></script>
-<script src="data/solutions/solutions2.js"></script>
-<script src="data/solutions/solutions3.js"></script>
-<script src="data/solutions/solutions4.js"></script>
-<script src="data/prompts.js"></script>
-<script src="data/tests.js"></script>
-<!-- Syntax colours (optional: offline, code shows uncoloured) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" integrity="sha384-F/bZzf7p3Joyp5psL90p/p89AZJsndkSoGwRpXcZhleCWhd8SnRuoYo4d0yirjJp" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <!-- App: views and logic; app.js last, it renders the first page -->
 <script src="js/codecolors.js"></script>
 <script src="js/checker.js"></script>
@@ -63,5 +56,7 @@
 <script src="js/router.js"></script>
 <script src="js/search.js"></script>
 <script src="js/app.js"></script>
+<!-- Syntax colours, self-hosted (a module: runs after the first render, then colours the page) -->
+<script type="module" src="js/highlight.js"></script>
 </body>
 </html>

@@ -568,6 +568,15 @@ function pyExclusive(job) {
   pyQueue = p.catch(() => {});
   return p;
 }
+// Opening a problem or a Python lesson starts Python loading in the background (when the browser is
+// idle), so the first Run doesn't sit through the 10 MB download. Once per page load; a failed load
+// (offline) is retried by the next real run.
+let pyWarm = false;
+function warmPython() {
+  if (pyWarm || !workerOk()) return;
+  pyWarm = true;
+  (window.requestIdleCallback || setTimeout)(() => pyExclusive(() => pyRun("None", 120)));
+}
 // Lesson exercises: resolves { out, err }. In the worker an endless loop is stopped after 15 seconds;
 // opened as a file there's no worker, so it runs on the page as before.
 function runFresh(code) {
@@ -610,7 +619,7 @@ async function runTests(slug) {
   const p = probBySlug(slug), spec = TESTS[slug], ref = SOL[slug];
   views._tr = views._tr || {};
   if (!spec || !ref || (views._tr[slug] && views._tr[slug].running)) return;
-  const st = views._tr[slug] = { running: pyJobs ? "Waiting for your other run to finish…" : "Loading Python (the first run downloads about 10 MB)…" };
+  const st = views._tr[slug] = { running: pyJobs && pywReady ? "Waiting for your other run to finish…" : "Loading Python (the first run downloads about 10 MB)…" };
   drawTests(slug);
   return pyExclusive(() => testJob(slug, st, p, spec, ref));
 }

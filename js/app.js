@@ -630,6 +630,7 @@ function refPattern(k) {
       <pre>${esc(n.code)}</pre>
       <div class="row"><a class="btn small" href="${yt("neetcode " + CATS[k] + " explained")}" target="_blank" rel="noopener">More videos</a></div>
       ${vids(EXPLAINERS.cats[k])}</div>
+    ${prPractice(PATTERN_PRACTICE[k], mainLang())}
     <div class="card practise-cta"><div class="row between"><div><b>Practise this pattern</b><div class="muted">${probs.length} problem${probs.length === 1 ? "" : "s"} · ${solved} solved</div></div>
       <button class="btn primary" data-probcat="${k}">Practise ${esc(CATS[k])} &rarr;</button></div></div>
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("pat:" + k)}</div>${learnNav("pat:" + k)}`;

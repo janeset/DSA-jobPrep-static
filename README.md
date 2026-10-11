@@ -86,7 +86,7 @@ css/style.css       design system and the 9 themes
 js/                 app logic
 js/vendor/          highlight.js core + Python / Java / C# (unmodified copies)
 data/               content: plain data in globals, no logic
-data/lessons/       language, Big-O and data-structure lessons
+data/lessons/       language, Big-O, data-structure and pattern lessons
 data/solutions/     reference solutions
 research/           source data for the company lists
 tools/verify/       checks the Java and C# solutions against the tests (not part of the app)
@@ -111,6 +111,7 @@ tools/verify/       checks the Java and C# solutions against the tests (not part
 | `data/lessons/principles.js` | Programming Principles: the 15 lessons, their Python / Java / C# code and quizzes |
 | `data/lessons/refresher.js`, `data/lessons/langlessons.js` | Python, Java and C# lessons and exercises |
 | `data/lessons/bigo.js`, `data/lessons/datastructures.js` | Big-O and data-structure content |
+| `data/lessons/patterns.js` | Good vs bad practice code pairs for each algorithm pattern, in Python, Java and C# |
 | `data/solutions/solutions1-4.js` | Python solutions and the approach text for every problem (`solutions4.js` holds the ones added for the company lists) |
 | `data/solutions/java.js`, `data/solutions/csharp.js` | Java and C# solutions for every problem (`addLang(lang, slug, code)`), loaded only when the main language needs them |
 

@@ -11,7 +11,7 @@ const VERSIONED = [/^https:\/\/cdn\.jsdelivr\.net\/pyodide\/v[\d.]+\//, /^https:
 // CONTENT_FILES in js/workspace.js and js/highlight.js; a missing file is skipped, not fatal.
 const SHELL = ["./", "index.html", "css/style.css", "js/theme-init.js",
   "data/data.js", "data/faang.js", "data/videos.js", "data/prompts.js", "data/tests.js",
-  "data/lessons/principles.js", "data/lessons/refresher.js", "data/lessons/bigo.js", "data/lessons/datastructures.js", "data/lessons/langlessons.js",
+  "data/lessons/principles.js", "data/lessons/refresher.js", "data/lessons/bigo.js", "data/lessons/datastructures.js", "data/lessons/patterns.js", "data/lessons/langlessons.js",
   "data/solutions/solutions1.js", "data/solutions/solutions2.js", "data/solutions/solutions3.js", "data/solutions/solutions4.js",
   "data/solutions/java.js", "data/solutions/csharp.js",
   "js/codecolors.js", "js/checker.js", "js/workspace.js", "js/nav.js", "js/interview.js", "js/router.js", "js/search.js",

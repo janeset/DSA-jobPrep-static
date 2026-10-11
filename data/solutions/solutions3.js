@@ -58,7 +58,7 @@ class Solution:
                 if indeg[v] == 0:
                     q.append(v)
         return done == numCourses`);
-add("clone-graph", "DFS with a dict old -> new so each node is copied once and cycles are handled.", "O(V + E) time, O(V) space",
+add("clone-graph", "DFS with a hash map old -> new so each node is copied once and cycles are handled.", "O(V + E) time, O(V) space",
 `class Solution:
     def cloneGraph(self, node):
         if not node:
@@ -385,7 +385,7 @@ add("powx-n", "Fast exponentiation: x^n = (x^(n/2))^2, times x if n is odd. Hand
             half = p(b, e // 2)
             return half * half * (b if e % 2 else 1)
         return p(x, n)`);
-add("reverse-integer", "Pop digits off with divmod and build the reverse; return 0 if the result leaves the 32-bit signed range.", "O(log n) time, O(1) space",
+add("reverse-integer", "Pop digits off the end (remainder and quotient by 10) and build the reverse; return 0 if the result leaves the 32-bit signed range.", "O(log n) time, O(1) space",
 `class Solution:
     def reverse(self, x):
         sign = -1 if x < 0 else 1
@@ -464,7 +464,7 @@ add("decode-ways", "dp[i] = ways to decode the first i chars: add dp[i-1] if the
                 nxt += prev
             prev, cur = cur, nxt
         return cur`);
-add("word-break", "dp[i] is True if some j < i has dp[j] True and s[j:i] is a word.", "O(n^2) time, O(n) space",
+add("word-break", "dp[i] is true if some j < i has dp[j] true and s[j:i] is a word.", "O(n^2) time, O(n) space",
 `class Solution:
     def wordBreak(self, s, wordDict):
         words = set(wordDict)
@@ -551,7 +551,7 @@ add("coin-change-ii", "Unbounded knapsack counting combinations: loop coins in t
             for a in range(c, amount + 1):
                 dp[a] += dp[a - c]
         return dp[amount]`);
-add("target-sum", "Count ways to reach each running total using a dict of {sum: ways}, updated per number with + and -.", "O(n * sum) time, O(sum) space",
+add("target-sum", "Count ways to reach each running total using a hash map of {sum: ways}, updated per number with + and -.", "O(n * sum) time, O(sum) space",
 `from collections import defaultdict
 
 class Solution:

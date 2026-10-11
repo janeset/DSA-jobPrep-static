@@ -888,3 +888,21 @@ PROMPT["greedy-tokenizer"].full = `<p>Write <code>Solution.tokenize(text, vocab)
 <li>Return the list of ids. Empty text gives an empty list.</li></ul>
 <p><b>Example:</b> <code>text = "unhappiness"</code>, <code>vocab = ["un", "happi", "happy", "ness", "h", "a", "p"]</code> &rarr; <code>"un" + "happi" + "ness"</code> &rarr; <code>[0, 1, 3]</code>.</p>
 <p class="muted">Follow-ups to discuss: why greedy longest-match isn't always the fewest tokens, how byte-pair encoding (BPE) differs, and streaming text that arrives in chunks (a token can span two chunks).</p>`;
+
+// The statements above use Python names; in Java or C# the workspace adds the matching signatures.
+PROMPT["in-memory-database"].lang = {
+  java: `the methods are <code>set</code>, <code>get</code>, <code>delete</code>, <code>scan</code>, <code>scanByPrefix</code>, <code>setWithTtl</code> (timestamps and <code>ttl</code> are <code>int</code>). <code>set</code> and <code>setWithTtl</code> return <code>void</code>, <code>get</code> returns <code>null</code> for a missing field, <code>delete</code> returns <code>boolean</code>, scans return <code>List&lt;String&gt;</code>.`,
+  cs: `the methods are <code>Set</code>, <code>Get</code>, <code>Delete</code>, <code>Scan</code>, <code>ScanByPrefix</code>, <code>SetWithTtl</code> (timestamps and <code>ttl</code> are <code>int</code>). <code>Set</code> and <code>SetWithTtl</code> return <code>void</code>, <code>Get</code> returns <code>null</code> for a missing field, <code>Delete</code> returns <code>bool</code>, scans return <code>IList&lt;string&gt;</code>.`,
+};
+PROMPT["crawler-fake-web"].lang = {
+  java: `<code>public List&lt;String&gt; crawl(String startUrl, Map&lt;String, List&lt;String&gt;&gt; web)</code>`,
+  cs: `<code>public IList&lt;string&gt; Crawl(string startUrl, IDictionary&lt;string, IList&lt;string&gt;&gt; web)</code>`,
+};
+PROMPT["stack-samples-to-trace"].lang = {
+  java: `<code>public List&lt;List&lt;Object&gt;&gt; samplesToEvents(List&lt;List&lt;Object&gt;&gt; samples)</code>: a sample is <code>[Integer timestamp, List&lt;String&gt; stack]</code> and an event is <code>[String type, Integer timestamp, String name]</code>.`,
+  cs: `<code>public IList&lt;IList&lt;object&gt;&gt; SamplesToEvents(IList&lt;IList&lt;object&gt;&gt; samples)</code>: a sample is <code>[int timestamp, list of string stack]</code> and an event is <code>[string type, int timestamp, string name]</code>.`,
+};
+PROMPT["greedy-tokenizer"].lang = {
+  java: `<code>public int[] tokenize(String text, String[] vocab)</code>`,
+  cs: `<code>public int[] Tokenize(string text, string[] vocab)</code>`,
+};

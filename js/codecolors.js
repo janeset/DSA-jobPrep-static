@@ -67,8 +67,8 @@ function highlightCode(root = document.getElementById("view")) {
   });
   root.querySelectorAll("textarea#code, textarea.ex, textarea.lx").forEach((ta) => {
     if (ta.classList.contains("hl-on")) return;
-    const lx = ta.dataset.lx || "";
-    enhanceEditor(ta, lx.startsWith("java:") ? "java" : lx.startsWith("cs:") ? "csharp" : "python");
+    const lx = ta.dataset.lx || "";   // data-hl names the language directly (the problem editor)
+    enhanceEditor(ta, HL_LANGS[ta.dataset.hl] || (lx.startsWith("java:") ? "java" : lx.startsWith("cs:") ? "csharp" : "python"));
   });
 }
 

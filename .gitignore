@@ -11,3 +11,7 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Verification build output (tools/verify)
+tools/verify/build/
+__pycache__/

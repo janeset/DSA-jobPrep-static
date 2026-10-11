@@ -72,7 +72,7 @@ add("add-two-numbers", "Add digit by digit, carrying over, building a new list."
             l1 = l1.next if l1 else None
             l2 = l2.next if l2 else None
         return dummy.next`);
-add("lru-cache", "OrderedDict keeps usage order: move a key to the end on access, evict from the front when full.", "O(1) per operation",
+add("lru-cache", "Keep keys in order of use: a hash map for O(1) lookup plus a linked list (or an ordered map) for the order. Move a key to the most-recent end on every access, and evict from the least-recent end when full.", "O(1) per operation",
 `from collections import OrderedDict
 
 class LRUCache:

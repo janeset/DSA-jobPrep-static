@@ -45,7 +45,7 @@ add("move-zeroes", "Write non-zeros forward with a write pointer, then fill the 
                 w += 1
         for i in range(w, len(nums)):
             nums[i] = 0`);
-add("group-anagrams", "Anagrams share the same sorted-letters key. Group words in a dict by that key.", "O(n * k log k) time, O(n * k) space",
+add("group-anagrams", "Anagrams share the same sorted-letters key. Group words in a hash map by that key.", "O(n * k log k) time, O(n * k) space",
 `from collections import defaultdict
 
 class Solution:
@@ -109,7 +109,7 @@ add("longest-consecutive-sequence", "Put everything in a set. Only start countin
                     y += 1
                 best = max(best, y - x + 1)
         return best`);
-add("subarray-sum-equals-k", "Prefix sums: a subarray ending here sums to k if (prefix - k) appeared earlier. Count with a dict.", "O(n) time, O(n) space",
+add("subarray-sum-equals-k", "Prefix sums: a subarray ending here sums to k if (prefix - k) appeared earlier. Count with a hash map.", "O(n) time, O(n) space",
 `class Solution:
     def subarraySum(self, nums, k):
         freq = {0: 1}

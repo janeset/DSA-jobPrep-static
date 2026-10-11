@@ -448,7 +448,7 @@ const views = {
           ${seg("data-codetheme", S.codeTheme || "dark", [["dark", "Visual Studio Dark"], ["match", "Match theme"]])}</div>
       </div>
       <div class="card"><h3>Your plan</h3>
-        <div class="setting"><div><b>Main language</b><div class="muted">Step 1 starts with this language's refresher, and data-structure code is shown in it. Problems and solutions are in Python either way.</div></div>
+        <div class="setting"><div><b>Main language</b><div class="muted">Step 1 starts with this language's refresher, and lessons, Big-O, problem starters and solutions are shown in it. Run tests checks Python code only.</div></div>
           ${seg("data-dslang", mainLang(), LANGS)}</div>
         <div class="setting"><div><b>Start date</b><div class="muted">Week 1 of the roadmap begins on this day. Today is week ${currentWeek()}.</div></div>
           <input type="date" id="s-start" value="${esc(S.start)}"></div>
@@ -486,11 +486,11 @@ function refPython(id) {
 
 function refBigo() {
   const bq = views._bq = views._bq || {};
-  const solved = BIGO_QUIZ.filter((q) => S.bigo[q.id]).length;
+  const solved = BIGO_QUIZ.filter((q) => S.bigo[q.id]).length, lang = mainLang();
   return `<div class="label">Complexity</div><h2>Big-O</h2>
-    <p class="muted">Read the sections, play with the growth calculator, then take the quiz. Finishing the quiz completes this step. <a href="${yt("big o notation explained for coding interviews python")}" target="_blank" rel="noopener">More videos</a></p>
+    <p class="muted">Read the sections, play with the growth calculator, then take the quiz. Finishing the quiz completes this step. <a href="${yt("big o notation explained for coding interviews " + langName(lang).toLowerCase())}" target="_blank" rel="noopener">More videos</a></p>
     <div class="card"><h3 style="margin-top:0">Watch first</h3>${vids(EXPLAINERS.bigo)}</div>` +
-    BIGO_SECTIONS.map((s, i) => `<details class="card" ${i === 0 ? "open" : ""}><summary>${esc(s.title)}</summary>${s.html}</details>`).join("") +
+    BIGO_SECTIONS.map((s, i) => `<details class="card" ${i === 0 ? "open" : ""}><summary>${esc(forLang(s.title))}</summary>${forLang(s.html)}</details>`).join("") +
     `<div class="card"><h3 style="margin-top:0">Growth calculator</h3>
       <label>Input size n: <b id="g-n"></b> <input type="range" id="g-slider" min="0" max="6" step="1" value="${views._gi ?? 3}" style="width:240px"></label>
       <div id="g-table"></div>
@@ -499,9 +499,9 @@ function refBigo() {
       <p class="muted">Time complexity unless the question says space.</p></div>` +
     BIGO_QUIZ.map((q, i) => {
       const ch = bq[q.id], done = ch !== undefined;
-      return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.bigo[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><pre>${esc(q.q)}</pre>
+      return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.bigo[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><pre class="language-${lang}">${esc(forLang(q.q))}</pre>
         <div class="row">${BIGO_OPTIONS.map((o) => `<button class="btn small ${done && o === q.a ? "primary" : ""}" data-bq="${q.id}" data-opt="${esc(o)}" ${done ? "disabled" : ""}>${o}</button>`).join("")}</div>
-        ${done ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite (you chose " + esc(ch) + "). Answer: " + q.a + "."}</b> ${esc(q.why)}</p><button class="btn small" data-bretry="${q.id}">Try again</button>` : ""}</div>`;
+        ${done ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite (you chose " + esc(ch) + "). Answer: " + q.a + "."}</b> ${esc(forLang(q.why))}</p><button class="btn small" data-bretry="${q.id}">Try again</button>` : ""}</div>`;
     }).join("") + `<div class="row" style="margin-bottom:var(--gap)">${reviewBtn("bigo")}</div>${learnNav("bigo")}`;
 }
 

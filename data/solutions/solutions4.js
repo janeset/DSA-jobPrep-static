@@ -242,7 +242,7 @@ add("fruit-into-baskets", "Longest window with at most two distinct values: coun
                 left += 1
             best = max(best, right - left + 1)
         return best`);
-add("next-greater-element-i", "Monotonic stack over nums2: when a bigger value arrives, it's the next greater element for everything smaller on the stack. Store the answers in a dict, then look up nums1.", "O(n + m) time, O(m) space",
+add("next-greater-element-i", "Monotonic stack over nums2: when a bigger value arrives, it's the next greater element for everything smaller on the stack. Store the answers in a hash map, then look up nums1.", "O(n + m) time, O(m) space",
 `class Solution:
     def nextGreaterElement(self, nums1, nums2):
         nxt, stack = {}, []
@@ -732,7 +732,7 @@ class Solution:
         return dp(0, 0)`);
 
 // ---- Batch 4: new problems from ranks 151-200 ----
-add("contains-duplicate-ii", "Remember each value's last index in a dict; a repeat within k of its last position is the answer.", "O(n) time, O(n) space",
+add("contains-duplicate-ii", "Remember each value's last index in a hash map; a repeat within k of its last position is the answer.", "O(n) time, O(n) space",
 `class Solution:
     def containsNearbyDuplicate(self, nums, k):
         last = {}
@@ -933,7 +933,7 @@ add("basic-calculator", "Scan once with a running result and sign. On '(' push t
                 prev, prev_sign = stack.pop()
                 res = prev + prev_sign * res
         return res + sign * num`);
-add("first-bad-version", "Binary search for the first version where isBadVersion is True.", "O(log n) time, O(1) space",
+add("first-bad-version", "Binary search for the first version where isBadVersion is true.", "O(log n) time, O(1) space",
 `class Solution:
     def firstBadVersion(self, n):
         lo, hi = 1, n
@@ -1216,7 +1216,7 @@ add("number-of-strings-that-appear-as-substrings-in-word", "Count the patterns t
 `class Solution:
     def numOfStrings(self, patterns, word):
         return sum(1 for p in patterns if p in word)`);
-add("insert-delete-getrandom-o1", "Array of values plus a dict of value -> index. Remove by moving the last value into the removed slot and popping the end; getRandom picks a random index.", "O(1) average per operation, O(n) space",
+add("insert-delete-getrandom-o1", "Array of values plus a hash map of value -> index. Remove by moving the last value into the removed slot and popping the end; getRandom picks a random index.", "O(1) average per operation, O(n) space",
 `import random
 
 class RandomizedSet:
@@ -1599,7 +1599,7 @@ class HitCounter:
         while self.q and self.q[0] <= timestamp - 300:
             self.q.popleft()
         return len(self.q)`);
-add("design-authentication-manager", "A dict of token -> expiry time. Renew only tokens that haven't expired yet (expiry > now); count tokens whose expiry is after now.", "O(1) generate and renew, O(n) count",
+add("design-authentication-manager", "A hash map of token -> expiry time. Renew only tokens that haven't expired yet (expiry > now); count tokens whose expiry is after now.", "O(1) generate and renew, O(n) count",
 `class AuthenticationManager:
     def __init__(self, timeToLive):
         self.ttl = timeToLive
@@ -1614,7 +1614,7 @@ add("design-authentication-manager", "A dict of token -> expiry time. Renew only
 
     def countUnexpiredTokens(self, currentTime):
         return sum(1 for t in self.expiry.values() if t > currentTime)`);
-add("design-spreadsheet", "Store only cells that were set, in a dict; a formula '=X+Y' adds two operands, each either a number or a cell (missing cells are 0).", "O(1) per call, O(cells set) space",
+add("design-spreadsheet", "Store only cells that were set, in a hash map; a formula '=X+Y' adds two operands, each either a number or a cell (missing cells are 0).", "O(1) per call, O(cells set) space",
 `class Spreadsheet:
     def __init__(self, rows):
         self.cells = {}
@@ -1688,7 +1688,7 @@ add("flatten-nested-list-iterator", "Keep a stack of NestedIntegers (reversed). 
         return bool(self.stack)`);
 
 // ---- Practical problems written for this app (reported for Anthropic and OpenAI) ----
-add("in-memory-database", "A dict of key -> {field: (value, expires_at)}. A field is live at time t if it has no expiry or t < expires_at. Scans filter live fields, sort by name and format them.", "O(1) set/get/delete, O(f log f) scan for f fields",
+add("in-memory-database", "A hash map of key -> {field: (value, expires_at)}. A field is live at time t if it has no expiry or t < expires_at. Scans filter live fields, sort by name and format them.", "O(1) set/get/delete, O(f log f) scan for f fields",
 `class InMemoryDB:
     def __init__(self):
         self.data = {}  # key -> {field: (value, expires_at or None)}

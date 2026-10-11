@@ -751,7 +751,10 @@ h3.ex-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; fon
   .cat-grid { display: flex; overflow-x: auto; scrollbar-width: none; margin: 0 -16px var(--gap); padding: 2px 16px 4px; }
   .cat-card { flex: 0 0 170px; }
 }
-.side-h .side-n { margin-left: auto; margin-right: 6px; letter-spacing: 0; font-weight: 600; }
+.side-h .side-n { margin-left: auto; margin-right: 6px; letter-spacing: 0; font-weight: 600; white-space: nowrap; }
+/* Group titles are buttons, which centre their text by default: keep long ones left-aligned when they wrap */
+.side-h { text-align: left; gap: 8px; }
+.side-h .chev { flex: none; }
 .pill.faang { font-size: .7rem; height: 20px; padding: 0 7px; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); white-space: nowrap; vertical-align: middle; }
 .ws-full { line-height: 1.6; }
 .ws-full ul { padding-left: 20px; }

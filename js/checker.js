@@ -443,7 +443,8 @@ def run_tests(payload):
     STATE["uns"], STATE["rns"] = uns, rns
     for src in spec["args"]:
         raw = eval("(" + src + ",)", input_globals(1))
-        r = {"input": src}
+        shown = show(list(raw))
+        r = {"input": src, "shown": shown[1:-1] if shown.startswith("[") and shown.endswith("]") else shown}
         try:
             exp, _ = call(rns, spec, copy.deepcopy(raw))
         except Exception as e:
@@ -720,5 +721,5 @@ document.addEventListener("click", (e) => {
   if (!b) return;
   if (b.dataset.runtests !== undefined) { S.code[views._ws] = $("#code").value; save(); return runTests(views._ws); }
   if (b.dataset.runcode !== undefined) return runCode();
-  if (b.dataset.starter !== undefined && confirm("Replace your code with the empty starter?")) { delete S.code[views._ws]; save(); delete (views._tr || {})[views._ws]; rerender(); }
+  if (b.dataset.starter !== undefined && confirm("Replace your code with the empty starter?")) { delete S.code[codeKey(views._ws)]; save(); delete (views._tr || {})[views._ws]; rerender(); }
 });

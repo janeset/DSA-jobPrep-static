@@ -25,8 +25,8 @@ practise what you learned, then the **3. Roadmap** that paces it all over 12 wee
 | Page | What it does |
 | --- | --- |
 | Home | Landing page: how the app works, the three steps with your progress on each, today's problems and reviews due, and a welcome note on your first visit |
-| 1. Learn | One path through the sidebar: Programming Principles (15 lessons: variables and types, control flow, functions, references, recursion, memory and the call stack, the four OOP pillars, composition, DRY / KISS / YAGNI, SOLID, readable code, errors and edge cases; each with code in your main language and a 3-question quiz), then your main language's refresher (Python, Java or C#), Big-O (growth calculator + quiz), the Data Structures Crash Course (an overview plus 13 numbered lessons), then the algorithm patterns. Each pattern ends with "Practise this pattern". Other languages and full courses are extras |
-| 2. Problems | 269 problems: 265 from LeetCode plus 4 practical problems written for this app, grouped by pattern and tagged Easy / Medium / Hard (all of them always shown). A grid of pattern cards on top shows progress per pattern and filters the list. The **company filter** shows the **FAANG Top 250** (in rank order, the problems Google, Amazon and Meta asked most in the last six months, each marked "FAANG #n"), **OpenAI** (LeetCode's OpenAI tags plus practical problems) and **Anthropic** (from candidate reports, unverified). The practical problems (an in-memory database built in stages, a web crawler, stack samples to trace events, a greedy tokenizer) have their full statement in the workspace instead of a LeetCode link. Each problem opens a split-screen workspace: **Prompt / Hints / Solution / Video** tabs on the left (a short summary with an example, three hints opened one at a time, and the solution and video locked until you reveal them); the Python editor (Pyodide) with **Run tests** (see below) on the right, plus an interview timer and attempt logging with spaced repetition. A scratchpad is there for experiments |
+| 1. Learn | One path through the sidebar: Programming Principles (15 lessons: variables and types, control flow, functions, references, recursion, memory and the call stack, the four OOP pillars, composition, DRY / KISS / YAGNI, SOLID, readable code, errors and edge cases; each with code in your main language and a 3-question quiz), then your main language's refresher (Python, Java or C#), Big-O (growth calculator + quiz, with code and operation costs in your main language), the Data Structures Crash Course (an overview plus 13 numbered lessons), then the algorithm patterns. Each pattern ends with "Practise this pattern". Other languages and full courses are extras |
+| 2. Problems | 269 problems: 265 from LeetCode plus 4 practical problems written for this app, grouped by pattern and tagged Easy / Medium / Hard (all of them always shown). A grid of pattern cards on top shows progress per pattern and filters the list. The **company filter** shows the **FAANG Top 250** (in rank order, the problems Google, Amazon and Meta asked most in the last six months, each marked "FAANG #n"), **OpenAI** (LeetCode's OpenAI tags plus practical problems) and **Anthropic** (from candidate reports, unverified). The practical problems (an in-memory database built in stages, a web crawler, stack samples to trace events, a greedy tokenizer) have their full statement in the workspace instead of a LeetCode link. Each problem opens a split-screen workspace: **Prompt / Hints / Solution / Video** tabs on the left (a short summary with an example, three hints opened one at a time, and the solution and video locked until you reveal them); the editor on the right, in your main language (see Problems in Java and C# below), with **Run tests** for Python, plus an interview timer and attempt logging with spaced repetition. A scratchpad is there for experiments |
 | 3. Roadmap | 12 weeks, one pattern family at a time, with each week's patterns to learn first and its problems and solutions |
 | Interview | Timed mock interviews (coding problems from your due reviews plus a behavioural round) with self-scoring and notes; seven fixed **Assessments** (Warm-up, Standard, Mid-size & startups, FAANG favourites, OpenAI-style, Anthropic-style, Big tech) of 2-3 timed coding questions each, with your best score; a STAR story bank with theme coverage; history with averages per round type |
 | Companies | Local employer tiers (with the problem level each one needs) and an application tracker |
@@ -52,6 +52,26 @@ solution is stopped instead of freezing the page. Problems where timing can't te
 The speed test needs the app served over http (`python -m http.server`); opened as a file,
 Run tests still checks correctness.
 
+### Problems in Java and C#
+
+With Java or C# as the main language (Settings, or the switch in the Learn sidebar), the workspace follows it:
+a LeetCode-style starter with the method signatures the tests use, the Solution tab in that language, and
+your code saved separately per language (switching back and forth loses nothing). The browser can't compile
+Java or C#, so instead of Run tests there's a **Check your answer** card: each test input with the expected
+output (worked out by the Python reference) to trace your code against, plus a link to run it on LeetCode.
+The practical problems add the Java / C# signatures under their statement.
+
+Every Java and C# solution is checked against the same tests as the Python ones:
+
+```bash
+python tools/verify/verify.py            # both languages; add java or cs for one, --only slug,slug for a few problems
+```
+
+It needs Chrome, a JDK and the .NET 8 SDK. It reads the app's data in headless Chrome, gets the expected
+answers from the Python reference with the app's own harness, compiles every solution with a small runner
+(`tools/verify/java`, `tools/verify/csharp`) and compares results the way Run tests does. Build output goes
+to `tools/verify/build/` (git-ignored). Run it after changing a solution, a test or `HARNESS_PY`.
+
 Python exercises are auto-graded in the browser via [Pyodide](https://pyodide.org) (about 10 MB from a
 CDN, fetched in the background when you open a problem or a Python lesson, then kept by the service worker).
 They run in the same background worker, so an endless loop is stopped after 15 seconds. Java and C# exercises are self-checked: each has sample cases and a reference
@@ -69,6 +89,7 @@ data/               content: plain data in globals, no logic
 data/lessons/       language, Big-O and data-structure lessons
 data/solutions/     reference solutions
 research/           source data for the company lists
+tools/verify/       checks the Java and C# solutions against the tests (not part of the app)
 ```
 
 | File | Contents |
@@ -90,12 +111,14 @@ research/           source data for the company lists
 | `data/lessons/principles.js` | Programming Principles: the 15 lessons, their Python / Java / C# code and quizzes |
 | `data/lessons/refresher.js`, `data/lessons/langlessons.js` | Python, Java and C# lessons and exercises |
 | `data/lessons/bigo.js`, `data/lessons/datastructures.js` | Big-O and data-structure content |
-| `data/solutions/solutions1-4.js` | Python solutions for every problem (`solutions4.js` holds the ones added for the company lists) |
+| `data/solutions/solutions1-4.js` | Python solutions and the approach text for every problem (`solutions4.js` holds the ones added for the company lists) |
+| `data/solutions/java.js`, `data/solutions/csharp.js` | Java and C# solutions for every problem (`addLang(lang, slug, code)`), loaded only when the main language needs them |
 
 Scripts load in the order listed in `index.html`: content first, then the app, with `js/app.js` last.
 `data/solutions/*`, `data/prompts.js` and `data/tests.js` (about 325 KB) aren't in that list: they load on
 demand (`CONTENT_FILES` in `js/workspace.js`), so code must check `contentReady` before using `SOL`,
-`TESTS`, `PROMPT` or `HINTS`.
+`TESTS`, `PROMPT` or `HINTS`. The Java and C# solutions (about 150 KB each) load separately through
+`loadLangSolutions(lang)`, only for that main language.
 
 When you add, rename or remove a file, update `SHELL` in `sw.js` too, so the offline copy stays complete.
 The Content Security Policy in `index.html` only lets the page load its own files, Google Fonts,

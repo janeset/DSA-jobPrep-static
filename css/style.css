@@ -756,3 +756,9 @@ h3.ex-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; fon
 .ws-full { line-height: 1.6; }
 .ws-full ul { padding-left: 20px; }
 .ws-full li { margin: 4px 0; }
+
+/* Programming principles quiz: options are sentences, stacked and wrapping */
+.pq-opts { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin: 4px 0 10px; }
+.pq-opts .btn { height: auto; min-height: 30px; padding: 6px 12px; white-space: normal; text-align: left; justify-content: flex-start; line-height: 1.4; max-width: 100%; }
+.pq-opts .btn.pq-wrong { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+.pq-opts .btn.pq-wrong:disabled { opacity: 1; }

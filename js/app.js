@@ -9,7 +9,7 @@ const today = () => iso(new Date());
 const addDays = (s, n) => { const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return iso(d); };
 const dayDiff = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
 
-const blankState = () => ({ start: today(), solved: {}, companies: [], code: {}, activity: {}, ref: {}, bigo: {}, learnRead: {} });
+const blankState = () => ({ start: today(), solved: {}, companies: [], code: {}, activity: {}, ref: {}, bigo: {}, principles: {}, learnRead: {} });
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const isDate = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 // Keeps only well-formed fields of a stored or imported state, so a bad backup file can't break a page
@@ -198,8 +198,11 @@ function langUnits(lang) {
   const m = LANG_META[lang];
   return m.lessons().map((l) => [m.prefix + l.id, lessonLabel(l), langLessonDone(lang, l) === l.exercises.length]);
 }
+// A principles lesson is done once its quiz is all correct, or it's marked as reviewed.
+const prDone = (l) => learnRead("pr:" + l.id) || l.quiz.every((q) => S.principles[q.id]);
 function learnPath() {
   return [
+    ...PRINCIPLES.map((l) => ["pr:" + l.id, l.name, prDone(l)]),
     ...langUnits(mainLang()),
     ["bigo", "Big-O", learnRead("bigo") || Object.keys(S.bigo).length === BIGO_QUIZ.length],
     ["ds:overview", "Data structures overview", learnRead("ds:overview")],
@@ -213,8 +216,8 @@ const DS_COURSE = () => ["ds:overview", ...DS.map((d) => "ds:" + d.id)];
 const dsCourseDone = () => DS_COURSE().filter(learnRead).length;
 // "Python: Basics" for language lessons, the plain label otherwise.
 const unitLabel = (u) => (partOf(u[0]) === "lang" ? `${langName(mainLang())}: ${u[1]}` : u[1]);
-const PATH_PARTS = [["lang", "Your language"], ["bigo", "Big-O"], ["ds", "Data Structures Crash Course"], ["pat", "Algorithm patterns"]];
-const partOf = (key) => (key === "bigo" ? "bigo" : key.startsWith("ds:") ? "ds" : key.startsWith("pat:") ? "pat" : "lang");
+const PATH_PARTS = [["pr", "Principles"], ["lang", "Your language"], ["bigo", "Big-O"], ["ds", "Data Structures Crash Course"], ["pat", "Algorithm patterns"]];
+const partOf = (key) => (key === "bigo" ? "bigo" : key.startsWith("pr:") ? "pr" : key.startsWith("ds:") ? "ds" : key.startsWith("pat:") ? "pat" : "lang");
 // Previous / Next along the path; pages outside it (other languages) step through their own lessons.
 function learnNav(key) {
   const path = learnPath(), i = path.findIndex((u) => u[0] === key);
@@ -227,9 +230,11 @@ function learnNav(key) {
     prev = units[k - 1];
     next = units[k + 1] || ["bigo", "Big-O"];
   }
-  const nextBtn = next ? `<button class="btn primary" data-ref="${next[0]}">Next: ${esc(next[1])} &rarr;</button>`
+  // Crossing into another part of the path names the language ("Next: Python: Basics", not "Next: Basics").
+  const label = (u) => esc(i >= 0 && partOf(u[0]) !== partOf(key) ? unitLabel(u) : u[1]);
+  const nextBtn = next ? `<button class="btn primary" data-ref="${next[0]}">Next: ${label(next)} &rarr;</button>`
     : `<button class="btn primary" data-goto-tab="problems">Step 2: practise the problems &rarr;</button>`;
-  return `<div class="row between">${prev ? `<button class="btn" data-ref="${prev[0]}">&larr; ${esc(prev[1])}</button>` : "<span></span>"}${nextBtn}</div>`;
+  return `<div class="row between">${prev ? `<button class="btn" data-ref="${prev[0]}">&larr; ${label(prev)}</button>` : "<span></span>"}${nextBtn}</div>`;
 }
 const reviewBtn = (key) => `<button class="btn ${learnRead(key) ? "" : "primary"}" data-learnread="${key}">${learnRead(key) ? "Reviewed ✓ (undo)" : "Mark as reviewed"}</button>`;
 
@@ -264,7 +269,7 @@ const views = {
       <div style="position:relative;z-index:1">
         <div class="eyebrow">${esc(dateStr)} · Week ${wk} of 12</div>
         <h1>${hello}.</h1>
-        <p>DSA Prep gets you ready for coding interviews in three steps: <b style="color:var(--text)">learn</b> the language, Big-O, data structures and patterns, <b style="color:var(--text)">practise</b> problems for each pattern, and follow the <b style="color:var(--text)">12-week roadmap</b>. Spaced reviews keep it all fresh.</p>
+        <p>DSA Prep gets you ready for coding interviews in three steps: <b style="color:var(--text)">learn</b> programming principles, your language, Big-O, data structures and patterns, <b style="color:var(--text)">practise</b> problems for each pattern, and follow the <b style="color:var(--text)">12-week roadmap</b>. Spaced reviews keep it all fresh.</p>
         <div class="row" style="margin-top:14px">${primary}${due.length ? `<button class="btn" data-due="1">Review ${due.length} due</button>` : ""}</div>
       </div>
       <div class="ring" title="${done} of ${inc.length} problems solved">
@@ -275,7 +280,7 @@ const views = {
     </section>
     <div class="section-head" style="margin:22px 0 10px"><h3 style="margin:0">How it works</h3><span class="muted">Three steps, in order. Your progress is on each card.</span></div>
     <div class="steps">
-      ${step(1, "Learn", `Refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have exercises and videos.`,
+      ${step(1, "Learn", `Start with programming principles, refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have quizzes, exercises and videos.`,
         learned, path.length, "topics", nextUnit ? `<span class="muted">Next: ${esc(unitLabel(nextUnit))}</span>` : '<span class="badge done">Done</span>',
         `<button class="btn primary" data-ref="${(nextUnit || path[0])[0]}" data-goto="learn">${learned ? "Continue learning" : "Start learning"} &rarr;</button>`)}
       ${step(2, "Problems", `${PROBLEMS.length} problems grouped by pattern and tagged Easy, Medium or Hard. Open one to code it in the browser, log your attempt and reveal the solution.`,
@@ -323,14 +328,17 @@ const views = {
       : LANG_META[lg].lessons().map((l, i) => [LANG_META[lg].prefix + l.id, lessonLabel(l), `${langLessonDone(lg, l)}/${l.exercises.length}`, (lg === "java" ? "J" : "C") + (i + 1)]));
     const side = `<button class="side-toggle" id="ref-compact" title="${compact ? "Expand sidebar" : "Compact sidebar"}"><span class="lbl">Compact</span><span>${compact ? "&raquo;" : "&laquo;"}</span></button>`
       + (compact ? "" : `<div class="side-lang"><span class="muted">Main language</span><div class="seg">${LANGS.map(([v, l]) => `<button data-dslang="${v}" class="${lang === v ? "on" : ""}">${l}</button>`).join("")}</div></div>`)
-      + langGroup(lang, `1 · ${langName(lang)} refresher`)
-      + grp("2 · Complexity", [["bigo", "Big-O", Object.keys(S.bigo).length === BIGO_QUIZ.length || learnRead("bigo") ? "✓" : `${Object.keys(S.bigo).length}/${BIGO_QUIZ.length}`, "O(n)"]])
-      + grp("3 · Data Structures Crash Course", [["ds:overview", "Start: overview & cheat sheet", tick("ds:overview"), "≡"], ...DS.map((d, i) => ["ds:" + d.id, `${i + 1}. ${d.name}`, tick("ds:" + d.id), d.short])], `${dsCourseDone()}/${DS_COURSE().length}`)
-      + grp("4 · Algorithm patterns", Object.keys(NOTES).map((k) => ["pat:" + k, CATS[k], tick("pat:" + k)]))
+      + grp("1 · Programming principles", PRINCIPLES.map((l, i) => ["pr:" + l.id, `${i + 1}. ${l.name}`, prDone(l) ? "✓" : `${l.quiz.filter((q) => S.principles[q.id]).length}/${l.quiz.length}`, l.short]),
+        `${PRINCIPLES.filter(prDone).length}/${PRINCIPLES.length}`)
+      + langGroup(lang, `2 · ${langName(lang)} refresher`)
+      + grp("3 · Complexity", [["bigo", "Big-O", Object.keys(S.bigo).length === BIGO_QUIZ.length || learnRead("bigo") ? "✓" : `${Object.keys(S.bigo).length}/${BIGO_QUIZ.length}`, "O(n)"]])
+      + grp("4 · Data Structures Crash Course", [["ds:overview", "Start: overview & cheat sheet", tick("ds:overview"), "≡"], ...DS.map((d, i) => ["ds:" + d.id, `${i + 1}. ${d.name}`, tick("ds:" + d.id), d.short])], `${dsCourseDone()}/${DS_COURSE().length}`)
+      + grp("5 · Algorithm patterns", Object.keys(NOTES).map((k) => ["pat:" + k, CATS[k], tick("pat:" + k)]))
       + LANGS.filter(([v]) => v !== lang).map(([v, l]) => langGroup(v, `Also: ${l}`)).join("")
       + grp("Courses", [["courses", "Full courses", "", "▶"]]);
     let body;
-    if (sel.startsWith("py:") && LESSONS.some((l) => l.id === sel.slice(3))) body = refPython(sel.slice(3));
+    if (sel.startsWith("pr:") && PRINCIPLES.some((l) => l.id === sel.slice(3))) body = refPrinciple(sel.slice(3));
+    else if (sel.startsWith("py:") && LESSONS.some((l) => l.id === sel.slice(3))) body = refPython(sel.slice(3));
     else if (sel.startsWith("j:") && JAVA_LESSONS.some((l) => l.id === sel.slice(2))) body = refLang("java", sel.slice(2));
     else if (sel.startsWith("c:") && CS_LESSONS.some((l) => l.id === sel.slice(2))) body = refLang("cs", sel.slice(2));
     else if (sel === "bigo") body = refBigo();
@@ -342,7 +350,7 @@ const views = {
     const path = learnPath(), learned = path.filter((u) => u[2]).length, part = partOf(sel);
     const crumbs = `<div class="learn-steps">${PATH_PARTS.map(([k, l], i) => `<span class="${k === part && path.some((u) => u[0] === sel) ? "on" : ""}">${i + 1}. ${k === "lang" ? esc(langName(lang)) : l}</span>`).join('<span class="muted">&rsaquo;</span>')}
       <span class="muted" style="margin-left:auto">${learned} / ${path.length} topics done</span></div>`;
-    return pageHead(`${stepNum(1)} Learn`, "Work down the sidebar in order: your main language, Big-O, data structures, then the patterns. When a pattern clicks, practise its problems.") +
+    return pageHead(`${stepNum(1)} Learn`, "Work down the sidebar in order: programming principles, your main language, Big-O, data structures, then the patterns. When a pattern clicks, practise its problems.") +
       `<div class="ref-layout ${compact ? "compact" : ""}"><aside class="ref-side">${side}</aside><section class="ref-main">${crumbs}${body}</section></div>`;
   },
 
@@ -526,6 +534,36 @@ function refDSOverview() {
     </table></div></div>
     ${dsVideos("overview", "data structures full course")}
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("ds:overview")}</div>${learnNav("ds:overview")}`;
+}
+
+// Escaped text with `backticks` shown as inline code (the principles content uses them).
+const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+// Programming principles lesson: the idea, code in your main language, pitfalls, then a quiz.
+function refPrinciple(id) {
+  const l = PRINCIPLES.find((x) => x.id === id), n = PRINCIPLES.indexOf(l) + 1, lang = mainLang();
+  const pq = views._pq = views._pq || {}, solved = l.quiz.filter((q) => S.principles[q.id]).length;
+  const quiz = l.quiz.map((q, i) => {
+    const ch = pq[q.id], answered = ch !== undefined;
+    return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.principles[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><p>${md(q.q)}</p>
+      <div class="pq-opts">${q.options.map((o, j) => `<button class="btn small ${answered && j === q.a ? "primary" : ""} ${answered && j === ch && j !== q.a ? "pq-wrong" : ""}" data-pq="${q.id}" data-popt="${j}" ${answered ? "disabled" : ""}>${md(o)}</button>`).join("")}</div>
+      ${answered ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite."}</b> ${md(q.why)}</p><button class="btn small" data-pretry="${q.id}">Try again</button>` : ""}</div>`;
+  }).join("");
+  return `<div class="label">Programming principles · ${esc(l.part)} · Lesson ${n} of ${PRINCIPLES.length}</div><h2>${esc(l.name)}</h2>
+    <div class="card"><p>${md(l.what)}</p>
+      <h3>Key ideas</h3><ul>${l.points.map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
+    <div class="card"><div class="section-head"><h3>Code</h3>${langSeg()}</div>
+      <pre class="language-${lang}">${esc(l.code[lang])}</pre>
+      <div class="row">${lang === "py" ? `<button class="btn small primary" data-prrun="${l.id}">Run in the scratchpad</button>` : `<span class="muted">${lang === "java" ? "Java" : "C#"} snippets are fragments: put statements in a method (C# also allows top-level statements) and keep the imports shown.</span>`}
+        <button class="btn small" data-prcopy="${l.id}">Copy</button></div></div>
+    <div class="cols-2">
+      <div class="card"><h3>Watch out for</h3><ul>${l.pitfalls.map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
+      <div class="card"><h3>In interviews</h3><p>${md(l.interview)}</p>
+        <a class="btn small" href="${yt(l.yt)}" target="_blank" rel="noopener">Videos on YouTube &nearr;</a></div>
+    </div>
+    <div class="card"><h3 style="margin:0">Quick check <span class="muted">${solved} / ${l.quiz.length} solved</span></h3>
+      <p class="muted" style="margin-bottom:0">Get every question right, or mark the lesson as reviewed, to complete it.</p></div>
+    ${quiz}
+    <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("pr:" + id)}</div>${learnNav("pr:" + id)}`;
 }
 
 function refDS(id) {
@@ -734,6 +772,20 @@ document.addEventListener("click", (e) => {
     return rerender();
   }
   if (t.dataset.bretry) { delete views._bq[t.dataset.bretry]; return rerender(); }
+  // programming principles: quiz answers, Try again, Run and Copy
+  const pqb = t.closest("[data-pq]");
+  if (pqb) {
+    const id = pqb.dataset.pq, q = PRINCIPLES.flatMap((l) => l.quiz).find((x) => x.id === id), pick = +pqb.dataset.popt;
+    views._pq[id] = pick;
+    if (pick === q.a && !S.principles[id]) { S.principles[id] = true; bump(); save(); }
+    return rerender();
+  }
+  if (t.dataset.pretry) { delete views._pq[t.dataset.pretry]; return rerender(); }
+  if (t.dataset.prrun) { S.code[""] = PRINCIPLES.find((l) => l.id === t.dataset.prrun).code.py; save(); return openWorkspace(""); }
+  if (t.dataset.prcopy) {
+    const l = PRINCIPLES.find((x) => x.id === t.dataset.prcopy);
+    return navigator.clipboard?.writeText(l.code[mainLang()]).then(() => { t.textContent = "Copied!"; }, () => {});
+  }
   if (t.dataset.goto) return go(t.dataset.goto);
   if (t.dataset.example) { S.code[""] = LESSONS[+t.dataset.example].example; save(); return openWorkspace(""); }
   if (t.dataset.ex) { const [i, j] = t.dataset.ex.split(":").map(Number); return runExercise(i, j); }

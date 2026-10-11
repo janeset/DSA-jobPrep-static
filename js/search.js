@@ -28,6 +28,7 @@ function buildSearchIndex() {
   Object.keys(NOTES).forEach((k) => add("refresher", CATS[k], "Algorithm pattern", NOTES[k].spot + " " + NOTES[k].how, () => { S.refSel = "pat:" + k; go("learn"); }));
   const ref = (key, title, sub, text) => add("refresher", title, sub, text, () => { S.refSel = key; go("learn"); });
   const clean = (t) => t.replace(/^\d+\.\s*/, "");
+  PRINCIPLES.forEach((l) => ref("pr:" + l.id, l.name, "Programming principles", (l.what + " " + l.points.join(" ")).replace(/`/g, "")));
   LESSONS.forEach((l) => ref("py:" + l.id, clean(l.title), "Python refresher", stripHtml(l.body)));
   JAVA_LESSONS.forEach((l) => ref("j:" + l.id, clean(l.title), "Java refresher", stripHtml(l.body)));
   CS_LESSONS.forEach((l) => ref("c:" + l.id, clean(l.title), "C# refresher", stripHtml(l.body)));

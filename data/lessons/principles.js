@@ -3,6 +3,11 @@
 // Java/C# snippets are focused fragments, like the data-structure lessons: put statements in a method
 // (C# also allows top-level statements, with type declarations after them) and keep the imports shown.
 // Quiz: `a` is the index of the right option; `why` is shown after answering.
+// Optional per lesson: `topics` (extra cards with text, a table and/or code; a table cell or row can be
+// per language) and `practice` (bad / good code pairs with why).
+
+// Boolean literals in each language's spelling, for the tables.
+const PR_T = { py: "`True`", java: "`true`", cs: "`true`" }, PR_F = { py: "`False`", java: "`false`", cs: "`false`" };
 
 const PRINCIPLES = [
   // ---------------- core building blocks ----------------
@@ -133,6 +138,112 @@ const int MaxRetries = 3;         // a compile-time constant`,
         java: "Write loops half-open: `for (int i = a; i < b; i++)` includes `a` and stops before `b`. Sticking to that habit avoids off-by-one errors.",
         cs: "Write loops half-open: `for (int i = a; i < b; i++)` includes `a` and stops before `b`. Sticking to that habit avoids off-by-one errors." },
     ],
+    topics: [
+      { title: "Booleans: true / false values",
+        text: { py: "A boolean (`bool`) is either `True` or `False`. Every comparison produces one, and you can keep it in a variable. Name it like a yes/no question (`is_adult`, `has_ticket`, `can_enter`) and the `if` reads like a sentence.",
+          java: "A `boolean` is either `true` or `false`. Every comparison produces one, and you can keep it in a variable. Name it like a yes/no question (`isAdult`, `hasTicket`, `canEnter`) and the `if` reads like a sentence.",
+          cs: "A `bool` is either `true` or `false`. Every comparison produces one, and you can keep it in a variable. Name it like a yes/no question (`isAdult`, `hasTicket`, `canEnter`) and the `if` reads like a sentence." },
+        code: {
+          py: `age, has_ticket = 20, True
+is_adult = age >= 18                 # a comparison gives a bool: True
+can_enter = is_adult and has_ticket  # combine named conditions
+print(type(is_adult), can_enter)     # <class 'bool'> True
+if can_enter:                        # not: if can_enter == True
+    print("welcome")`,
+          java: `int age = 20;
+boolean hasTicket = true;
+boolean isAdult = age >= 18;               // a comparison gives a boolean: true
+boolean canEnter = isAdult && hasTicket;   // combine named conditions
+System.out.println(canEnter);              // true
+if (canEnter) {                            // not: if (canEnter == true)
+    System.out.println("welcome");
+}`,
+          cs: `int age = 20;
+bool hasTicket = true;
+bool isAdult = age >= 18;                  // a comparison gives a bool: true
+bool canEnter = isAdult && hasTicket;      // combine named conditions
+Console.WriteLine(canEnter);               // True (C# prints bools capitalised)
+if (canEnter)                              // not: if (canEnter == true)
+{
+    Console.WriteLine("welcome");
+}` } },
+      { title: "Comparison operators",
+        text: { py: "Comparisons return a boolean. One `=` assigns, two `==` compare. Python's `==` compares values (two lists with the same items are equal), while `is` checks that both names point to the very same object.",
+          java: "Comparisons return a boolean. One `=` assigns, two `==` compare. On numbers, `==` compares values; on objects (including `String`) it checks whether both point to the very same object, so compare content with `.equals()`.",
+          cs: "Comparisons return a boolean. One `=` assigns, two `==` compare. On numbers and on `string`, `==` compares values (the text, for strings); on most other classes it checks for the very same object unless the class defines its own `==`." },
+        head: ["Operator", "Meaning", "Example", "Result"],
+        rows: [
+          ["`==`", "equal to", "`3 == 3`", PR_T],
+          ["`!=`", "not equal to", "`3 != 4`", PR_T],
+          ["`<`", "less than", "`2 < 5`", PR_T],
+          ["`>`", "greater than", "`2 > 5`", PR_F],
+          ["`<=`", "less than or equal to", "`5 <= 5`", PR_T],
+          ["`>=`", "greater than or equal to", "`4 >= 5`", PR_F],
+          { py: ["`is` / `is not`", "the same object (use it for `None`)", "`x is None`", "`True` when `x` is `None`"] },
+          { py: ["`in` / `not in`", "is it in the collection?", "`3 in [1, 2, 3]`", "`True`"] },
+          { py: ["chained", "both comparisons at once", "`0 <= i < n`", "`True` when `i` is a valid index"] },
+          { java: ["`.equals()`", "same content (strings, objects)", "`s.equals(\"hi\")`", "`true` when `s` reads hi"] },
+          { cs: ["`is null` / `is not null`", "null check", "`s is null`", "`true` when `s` is `null`"] },
+        ] },
+      { title: { py: "Truth table: and, or, not", java: "Truth table: &&, ||, !", cs: "Truth table: &&, ||, !" },
+        text: { py: "`and` is `True` only when both sides are, `or` is `True` when at least one side is, and `not` flips a value.",
+          java: "`&&` (and) is `true` only when both sides are, `||` (or) is `true` when at least one side is, and `!` (not) flips a value.",
+          cs: "`&&` (and) is `true` only when both sides are, `||` (or) is `true` when at least one side is, and `!` (not) flips a value." },
+        head: { py: ["`a`", "`b`", "`a and b`", "`a or b`", "`not a`"], java: ["`a`", "`b`", "`a && b`", "`a || b`", "`!a`"], cs: ["`a`", "`b`", "`a && b`", "`a || b`", "`!a`"] },
+        rows: [
+          [PR_T, PR_T, PR_T, PR_T, PR_F],
+          [PR_T, PR_F, PR_F, PR_T, PR_F],
+          [PR_F, PR_T, PR_F, PR_T, PR_T],
+          [PR_F, PR_F, PR_F, PR_F, PR_T],
+        ],
+        after: { py: "`not` binds tighter than `and`, which binds tighter than `or`: `a or b and c` means `a or (b and c)`. Add brackets when you mix them.",
+          java: "`!` binds tighter than `&&`, which binds tighter than `||`: `a || b && c` means `a || (b && c)`. Add brackets when you mix them.",
+          cs: "`!` binds tighter than `&&`, which binds tighter than `||`: `a || b && c` means `a || (b && c)`. Add brackets when you mix them." } },
+      { title: { py: "Truthy and falsy values", java: "Conditions must be booleans", cs: "Conditions must be booleans" },
+        text: { py: "Any value can be a condition. These count as false (falsy): `False`, `None`, `0`, `0.0`, `\"\"` (empty string) and empty collections (`[]`, `{}`, `set()`, `()`). Everything else is truthy, so `if nums:` means \"if nums isn't empty\". Careful: `if x:` is also false when `x` is `0`; write `if x is not None:` when 0 is a valid value.",
+          java: "A condition must be a `boolean`. `if (n)` or `if (list)` doesn't compile: write the comparison you mean, such as `if (n != 0)`, `if (!list.isEmpty())` or `if (s != null)`.",
+          cs: "A condition must be a `bool`. `if (n)` or `if (list)` doesn't compile: write the comparison you mean, such as `if (n != 0)`, `if (list.Count > 0)` or `if (!string.IsNullOrEmpty(s))`." },
+        code: { py: `print(bool(0), bool(""), bool([]), bool(None))   # False False False False
+print(bool(5), bool("0"), bool([0]))             # True True True` } },
+      { title: { py: "if / elif / else", java: "if / else if / else", cs: "if / else if / else" },
+        text: { py: "Conditions are checked from the top, and only the first branch whose condition is `True` runs; the rest are skipped. `else` catches everything that didn't match. A one-line choice can use a conditional expression: `label = \"even\" if n % 2 == 0 else \"odd\"`.",
+          java: "Conditions are checked from the top, and only the first branch whose condition is `true` runs; the rest are skipped. `else` catches everything that didn't match. A one-line choice can use the ternary operator: `String label = n % 2 == 0 ? \"even\" : \"odd\";`.",
+          cs: "Conditions are checked from the top, and only the first branch whose condition is `true` runs; the rest are skipped. `else` catches everything that didn't match. A one-line choice can use the ternary operator: `string label = n % 2 == 0 ? \"even\" : \"odd\";`." },
+        code: {
+          py: `score = 72
+if score >= 90:
+    grade = "A"
+elif score >= 70:          # only checked when the line above was False
+    grade = "B"
+else:
+    grade = "C"
+print(grade)               # B: the first true branch wins, the rest are skipped`,
+          java: `int score = 72;
+String grade;
+if (score >= 90) {
+    grade = "A";
+} else if (score >= 70) {  // only checked when the line above was false
+    grade = "B";
+} else {
+    grade = "C";
+}
+System.out.println(grade); // B: the first true branch wins, the rest are skipped`,
+          cs: `int score = 72;
+string grade;
+if (score >= 90)
+{
+    grade = "A";
+}
+else if (score >= 70)      // only checked when the line above was false
+{
+    grade = "B";
+}
+else
+{
+    grade = "C";
+}
+Console.WriteLine(grade);  // B: the first true branch wins, the rest are skipped` } },
+    ],
     code: {
       py: `def classify(n):
     if n < 0:                     # guard clause: handle the special case first
@@ -205,6 +316,179 @@ string msg = Classify(7) switch        // switch expression
       { py: "Off by one: `range(1, n)` stops at `n - 1`.",
         java: "Off by one: `i <= nums.length` reads one past the end and throws `ArrayIndexOutOfBoundsException`.",
         cs: "Off by one: `i <= nums.Length` reads one past the end and throws `IndexOutOfRangeException`." },
+    ],
+    practice: [
+      { why: "The variable already is the condition; comparing it with a boolean only adds noise.",
+        bad: { py: `if is_valid == True:
+    save()
+if is_empty == False:
+    load()`, java: `if (isValid == true) {
+    save();
+}
+if (isEmpty == false) {
+    load();
+}`, cs: `if (isValid == true)
+{
+    Save();
+}
+if (isEmpty == false)
+{
+    Load();
+}` },
+        good: { py: `if is_valid:
+    save()
+if not is_empty:
+    load()`, java: `if (isValid) {
+    save();
+}
+if (!isEmpty) {
+    load();
+}`, cs: `if (isValid)
+{
+    Save();
+}
+if (!isEmpty)
+{
+    Load();
+}` } },
+      { why: "A comparison already is a boolean, so return it directly instead of branching to return a constant.",
+        bad: { py: `def is_even(n):
+    if n % 2 == 0:
+        return True
+    else:
+        return False`, java: `boolean isEven(int n) {
+    if (n % 2 == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}`, cs: `bool IsEven(int n)
+{
+    if (n % 2 == 0)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}` },
+        good: { py: `def is_even(n):
+    return n % 2 == 0`, java: `boolean isEven(int n) {
+    return n % 2 == 0;
+}`, cs: `bool IsEven(int n) => n % 2 == 0;` } },
+      { why: "Guard clauses deal with the special cases first and return, so the main work isn't buried inside nested `if`s and `else`s.",
+        bad: { py: `def average(nums):
+    if nums is not None:
+        if len(nums) > 0:
+            return sum(nums) / len(nums)
+        else:
+            return 0
+    else:
+        return 0`, java: `double average(int[] nums) {
+    if (nums != null) {
+        if (nums.length > 0) {
+            int sum = 0;
+            for (int x : nums) sum += x;
+            return (double) sum / nums.length;
+        } else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}`, cs: `double Average(int[] nums)
+{
+    if (nums != null)
+    {
+        if (nums.Length > 0)
+        {
+            int sum = 0;
+            foreach (int x in nums) sum += x;
+            return (double)sum / nums.Length;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else
+    {
+        return 0;
+    }
+}` },
+        good: { py: `def average(nums):
+    if not nums:   # None or empty
+        return 0
+    return sum(nums) / len(nums)`, java: `double average(int[] nums) {
+    if (nums == null || nums.length == 0) return 0;
+    int sum = 0;
+    for (int x : nums) sum += x;
+    return (double) sum / nums.length;
+}`, cs: `double Average(int[] nums)
+{
+    if (nums == null || nums.Length == 0) return 0;
+    int sum = 0;
+    foreach (int x in nums) sum += x;
+    return (double)sum / nums.Length;
+}` } },
+      { why: "A long condition is hard to read and easy to get wrong. Give each part a name and the `if` explains itself.",
+        bad: { py: `if age >= 18 and (country == "CA" or has_visa) and not banned:
+    hire()`, java: `if (age >= 18 && (country.equals("CA") || hasVisa) && !banned) {
+    hire();
+}`, cs: `if (age >= 18 && (country == "CA" || hasVisa) && !banned)
+{
+    Hire();
+}` },
+        good: { py: `is_adult = age >= 18
+may_work = country == "CA" or has_visa
+if is_adult and may_work and not banned:
+    hire()`, java: `boolean isAdult = age >= 18;
+boolean mayWork = country.equals("CA") || hasVisa;
+if (isAdult && mayWork && !banned) {
+    hire();
+}`, cs: `bool isAdult = age >= 18;
+bool mayWork = country == "CA" || hasVisa;
+if (isAdult && mayWork && !banned)
+{
+    Hire();
+}` } },
+      { why: { py: "`None` is a single object, so `is None` is the exact check; `== None` can be fooled by a class that defines its own `==`.",
+          java: "`==` on strings compares references, so two strings with the same text can be unequal. Putting the literal first also avoids a `NullPointerException` when `name` is `null`.",
+          cs: "`ToLower()` creates two new strings and throws when `a` is `null`. `string.Equals` with a comparison option ignores case without either problem." },
+        bad: { py: `if result == None:
+    retry()`, java: `if (name == "admin") {
+    grantAccess();
+}`, cs: `if (a.ToLower() == b.ToLower())
+{
+    Merge();
+}` },
+        good: { py: `if result is None:
+    retry()`, java: `if ("admin".equals(name)) {
+    grantAccess();
+}`, cs: `if (string.Equals(a, b, StringComparison.OrdinalIgnoreCase))
+{
+    Merge();
+}` } },
+      { why: { py: "When you only need the items, loop over them directly. Use `enumerate` when you need the index too.",
+          java: "When you don't need the index, for-each says what you mean and can't go out of bounds.",
+          cs: "When you don't need the index, `foreach` says what you mean and can't go out of bounds." },
+        bad: { py: `for i in range(len(nums)):
+    print(nums[i])`, java: `for (int i = 0; i < nums.length; i++) {
+    System.out.println(nums[i]);
+}`, cs: `for (int i = 0; i < nums.Length; i++)
+{
+    Console.WriteLine(nums[i]);
+}` },
+        good: { py: `for x in nums:
+    print(x)
+for i, x in enumerate(nums):   # index and item
+    print(i, x)`, java: `for (int x : nums) {
+    System.out.println(x);
+}`, cs: `foreach (int x in nums)
+{
+    Console.WriteLine(x);
+}` } },
     ],
     interview: "Say your loop bounds out loud (\"`left` starts at 0, `right` at the last index, stop when they cross\") and check the empty and one-element cases before you run anything.",
     quiz: [

@@ -540,8 +540,9 @@ function refDSOverview() {
 const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
 // Lesson text (principles, data structures) can be shared or per language: a string shows for every
 // language, { py, java, cs } shows the main language's version, and an item with no version for the
-// main language is hidden, so a Java learner never sees Python-only tips and vice versa.
-const forLang = (v, lang = mainLang()) => (v == null || typeof v === "string" ? v : v[lang]);
+// main language is hidden, so a Java learner never sees Python-only tips and vice versa. An array (a
+// table row) is shared too.
+const forLang = (v, lang = mainLang()) => (v == null || typeof v === "string" || Array.isArray(v) ? v : v[lang]);
 const langList = (list) => list.map((v) => forLang(v)).filter((v) => v != null);
 const allLangText = (v) => (typeof v === "string" ? v : Object.values(v).join(" "));
 // How to run the Java / C# fragments, in the main language's own terms.
@@ -550,6 +551,27 @@ const snippetNote = (lang) => (lang === "java"
   : "C# snippets are fragments: they run as top-level statements in a console app (type declarations go at the end), or inside a method. Keep the usings shown.");
 // A quiz question with `langs` only shows for those languages.
 const prQuiz = (l, lang = mainLang()) => l.quiz.filter((q) => !q.langs || q.langs.includes(lang));
+// A lesson's extra card: text, a table and/or code, each shared or per language. Hidden when its title
+// has no version for the main language.
+function prTopic(t, lang) {
+  const title = forLang(t.title), head = forLang(t.head), code = forLang(t.code);
+  if (title == null) return "";
+  const rows = langList(t.rows || []), cells = (r, tag) => r.map((c) => `<${tag}>${md(forLang(c))}</${tag}>`).join("");
+  return `<div class="card"><h3 style="margin-top:0">${md(title)}</h3>${t.text ? `<p>${md(forLang(t.text))}</p>` : ""}
+    ${head ? `<div class="table-wrap"><table class="pr-table"><tr>${cells(head, "th")}</tr>${rows.map((r) => `<tr>${cells(r, "td")}</tr>`).join("")}</table></div>` : ""}
+    ${t.after ? `<p>${md(forLang(t.after))}</p>` : ""}${code ? `<pre class="language-${lang}">${esc(code)}</pre>` : ""}</div>`;
+}
+// Good vs bad practice: the same job written two ways, with why one is better.
+function prPractice(list, lang) {
+  const items = (list || []).filter((x) => forLang(x.bad) != null);
+  if (!items.length) return "";
+  return `<div class="card"><h3 style="margin-top:0">Good practice vs bad practice</h3>
+    ${items.map((x) => `<div class="pr-pair"><div class="pr-cols">
+      <div><div class="pr-tag pr-bad">✗ Avoid</div><pre class="language-${lang}">${esc(forLang(x.bad))}</pre></div>
+      <div><div class="pr-tag pr-good">✓ Prefer</div><pre class="language-${lang}">${esc(forLang(x.good))}</pre></div></div>
+      <p>${md(forLang(x.why))}</p></div>`).join("")}</div>`;
+}
+
 // Programming principles lesson: the idea, code in your main language, pitfalls, then a quiz.
 function refPrinciple(id) {
   const l = PRINCIPLES.find((x) => x.id === id), n = PRINCIPLES.indexOf(l) + 1, lang = mainLang();
@@ -563,6 +585,7 @@ function refPrinciple(id) {
   return `<div class="label">Programming principles · ${esc(l.part)} · Lesson ${n} of ${PRINCIPLES.length}</div><h2>${esc(l.name)}</h2>
     <div class="card"><p>${md(forLang(l.what))}</p>
       <h3>Key ideas</h3><ul>${langList(l.points).map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
+    ${(l.topics || []).map((t) => prTopic(t, lang)).join("")}
     <div class="card"><div class="section-head"><h3>Code</h3>${langSeg()}</div>
       <pre class="language-${lang}">${esc(l.code[lang])}</pre>
       <div class="row">${lang === "py" ? `<button class="btn small primary" data-prrun="${l.id}">Run in the scratchpad</button>` : `<span class="muted">${snippetNote(lang)}</span>`}
@@ -572,6 +595,7 @@ function refPrinciple(id) {
       <div class="card"><h3>In interviews</h3><p>${md(forLang(l.interview))}</p>
         <a class="btn small" href="${yt(l.yt)}" target="_blank" rel="noopener">Videos on YouTube &nearr;</a></div>
     </div>
+    ${prPractice(l.practice, lang)}
     <div class="card"><h3 style="margin:0">Quick check <span class="muted">${solved} / ${qs.length} solved</span></h3>
       <p class="muted" style="margin-bottom:0">Get every question right, or mark the lesson as reviewed, to complete it.</p></div>
     ${quiz}

@@ -36,8 +36,21 @@ function cleanState(d) {
     name: String(c.name ?? ""), tier: TIERS.some((t) => t.id === +c.tier) ? +c.tier : TIERS[0].id,
     status: STATUSES.includes(c.status) ? c.status : STATUSES[0], note: String(c.note ?? ""),
   }));
+  if (s.level !== "new" && s.level !== "code") delete s.level;
+  migrateRef(s);
   cleanInterview(s); // js/interview.js
   return s;
+}
+// Exercise progress and code saved before the Python Basics and Functions lessons were split move to
+// the exercise's new key (REF_MOVED in data/lessons/refresher.js); old page addresses are renamed too.
+function migrateRef(s) {
+  for (const [from, to] of Object.entries(REF_MOVED)) {
+    if (s.ref[from] && !s.ref[to]) s.ref[to] = true;
+    delete s.ref[from];
+    if (s.code["ex:" + from] != null && s.code["ex:" + to] == null) s.code["ex:" + to] = s.code["ex:" + from];
+    delete s.code["ex:" + from];
+  }
+  if (LESSON_ALIASES[s.refSel]) s.refSel = LESSON_ALIASES[s.refSel];
 }
 function load() {
   let s = null;
@@ -125,9 +138,12 @@ const vids = (list) => !list || !list.length ? "" : `<div class="vgrid">${list.m
    <div class="vt">${esc(v.title)}<br><span class="muted">${esc(v.ch)}</span></div></div>`).join("")}</div>`;
 const yt = (q) => `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`;
 const LESSON_YT = {
-  basics: "python basics variables loops conditionals tutorial", strings: "python strings methods slicing tutorial",
+  values: "python for absolute beginners variables", "first-functions": "python functions for absolute beginners",
+  "first-lists": "python lists for absolute beginners", "reading-errors": "how to read python error messages traceback beginners",
+  types: "python data types and arithmetic operators beginners", conditionals: "python if elif else tutorial beginners",
+  loops: "python for loops while loops tutorial beginners", truthiness: "python truthy falsy values explained", strings: "python strings methods slicing tutorial",
   lists: "python lists tuples slicing tutorial", dicts: "python dictionaries sets tutorial",
-  functions: "python functions args kwargs scope closures", comprehensions: "python list comprehensions generators yield",
+  functions: "python functions tutorial beginners", "functions-more": "python args kwargs scope closures", comprehensions: "python list comprehensions generators yield",
   classes: "python classes OOP tutorial", errors: "python exceptions try except tutorial",
   stdlib: "python collections heapq bisect deque for coding interviews", recursion: "recursion and big o notation python",
   testing: "python pytest unittest tutorial",
@@ -185,39 +201,57 @@ function logDialog(slug) {
 }
 
 // ---------- the Learn path ----------
-// Step 1 in order: your main language, Big-O, data structures, then the algorithm patterns.
+// Step 1 in order. New to programming (the default): Python from zero, your main language, Big-O,
+// data structures, the algorithm patterns, then the programming principles "for later". Already code:
+// the principles first, then your language and the rest; Python from zero stays in the sidebar as an option.
 // Each unit is [key, label, done]. Other languages are optional extras outside the path.
 const LANGS = [["py", "Python"], ["java", "Java"], ["cs", "C#"]];
 const mainLang = () => S.dsLang || "py";
 const langName = (k) => LANGS.find(([v]) => v === k)[1];
-const lessonLabel = (l) => l.title.replace(/^\d+\.\s*/, "").split(":")[0];
-const pyLessonDone = (l) => l.exercises.every((_, j) => S.ref[l.id + "-" + j]);
+const beginner = () => S.level !== "code";
+const LEVELS = [["new", "I'm new to programming"], ["code", "I already code"]];
+const lessonLabel = (l) => l.label || l.title.replace(/^\d+\.\s*/, "").split(":")[0];
+// The two Python tracks run on the same page code: Python from zero (beginner.js) and Python (refresher.js).
+const PY_TRACKS = {
+  zero: { name: "Python from zero", prefix: "zero:", lessons: () => ZERO_LESSONS },
+  py: { name: "Python", prefix: "py:", lessons: () => LESSONS },
+};
+const exKey = (l, ex, j) => l.id + "-" + (ex.key ?? j);
+const pyDoneCount = (l) => l.exercises.filter((ex, j) => S.ref[exKey(l, ex, j)]).length;
+const pyLessonDone = (l) => pyDoneCount(l) === l.exercises.length;
+const zeroUnits = () => ZERO_LESSONS.map((l) => ["zero:" + l.id, lessonLabel(l), pyLessonDone(l)]);
 const learnRead = (k) => !!(S.learnRead || {})[k];
 function langUnits(lang) {
   if (lang === "py") return LESSONS.map((l) => ["py:" + l.id, lessonLabel(l), pyLessonDone(l)]);
   const m = LANG_META[lang];
   return m.lessons().map((l) => [m.prefix + l.id, lessonLabel(l), langLessonDone(lang, l) === l.exercises.length]);
 }
-// A principles lesson is done once its quiz is all correct, or it's marked as reviewed.
-const prDone = (l) => learnRead("pr:" + l.id) || prQuiz(l).every((q) => S.principles[q.id]);
+// Lessons with a quiz are done only when every question is answered correctly (no "mark as reviewed").
+const prDone = (l) => prQuiz(l).every((q) => S.principles[q.id]);
+const bigoDone = () => BIGO_QUIZ.every((q) => S.bigo[q.id]);
 function learnPath() {
-  return [
-    ...PRINCIPLES.map((l) => ["pr:" + l.id, l.name, prDone(l)]),
+  const pr = PRINCIPLES.map((l) => ["pr:" + l.id, l.name, prDone(l)]);
+  const core = [
     ...langUnits(mainLang()),
-    ["bigo", "Big-O", learnRead("bigo") || Object.keys(S.bigo).length === BIGO_QUIZ.length],
+    ["bigo", "Big-O", bigoDone()],
     ["ds:overview", "Data structures overview", learnRead("ds:overview")],
     ...DS.map((d) => ["ds:" + d.id, d.name, learnRead("ds:" + d.id)]),
     ...Object.keys(NOTES).map((k) => ["pat:" + k, CATS[k], learnRead("pat:" + k)]),
   ];
+  return beginner() ? [...zeroUnits(), ...core, ...pr] : [...pr, ...core];
 }
 const learnNext = () => learnPath().find((u) => !u[2]);
 // The Data Structures Crash Course: the overview, then one lesson per structure.
 const DS_COURSE = () => ["ds:overview", ...DS.map((d) => "ds:" + d.id)];
 const dsCourseDone = () => DS_COURSE().filter(learnRead).length;
-// "Python: Basics" for language lessons, the plain label otherwise.
-const unitLabel = (u) => (partOf(u[0]) === "lang" ? `${langName(mainLang())}: ${u[1]}` : u[1]);
-const PATH_PARTS = [["pr", "Principles"], ["lang", "Your language"], ["bigo", "Big-O"], ["ds", "Data Structures Crash Course"], ["pat", "Algorithm patterns"]];
-const partOf = (key) => (key === "bigo" ? "bigo" : key.startsWith("pr:") ? "pr" : key.startsWith("ds:") ? "ds" : key.startsWith("pat:") ? "pat" : "lang");
+// "Python: Loops" for language lessons, "Python from zero: Values and variables" for the beginner
+// track, the plain label otherwise.
+const unitLabel = (u) => (partOf(u[0]) === "lang" ? `${langName(mainLang())}: ${u[1]}` : partOf(u[0]) === "zero" ? `Python from zero: ${u[1]}` : u[1]);
+const pathParts = () => {
+  const core = [["lang", langName(mainLang())], ["bigo", "Big-O"], ["ds", "Data Structures Crash Course"], ["pat", "Algorithm patterns"]];
+  return beginner() ? [["zero", "Python from zero"], ...core, ["pr", "Principles (for later)"]] : [["pr", "Principles"], ...core];
+};
+const partOf = (key) => (key === "bigo" ? "bigo" : key.startsWith("zero:") ? "zero" : key.startsWith("pr:") ? "pr" : key.startsWith("ds:") ? "ds" : key.startsWith("pat:") ? "pat" : "lang");
 // Previous / Next along the path; pages outside it (other languages) step through their own lessons.
 function learnNav(key) {
   const path = learnPath(), i = path.findIndex((u) => u[0] === key);
@@ -226,16 +260,18 @@ function learnNav(key) {
     prev = path[i - 1];
     next = path[i + 1];
   } else {
-    const lang = key.startsWith("py:") ? "py" : key.startsWith("j:") ? "java" : "cs", units = langUnits(lang), k = units.findIndex((u) => u[0] === key);
+    const zero = key.startsWith("zero:");
+    const units = zero ? zeroUnits() : langUnits(key.startsWith("py:") ? "py" : key.startsWith("j:") ? "java" : "cs"), k = units.findIndex((u) => u[0] === key);
     prev = units[k - 1];
-    next = units[k + 1] || ["bigo", "Big-O"];
+    next = units[k + 1] || (zero ? langUnits(mainLang())[0] : ["bigo", "Big-O"]);
   }
   // Crossing into another part of the path names the language ("Next: Python: Basics", not "Next: Basics").
-  const label = (u) => esc(i >= 0 && partOf(u[0]) !== partOf(key) ? unitLabel(u) : u[1]);
+  const label = (u) => esc(partOf(u[0]) !== partOf(key) ? unitLabel(u) : u[1]);
   const nextBtn = next ? `<button class="btn primary" data-ref="${next[0]}">Next: ${label(next)} &rarr;</button>`
     : `<button class="btn primary" data-goto-tab="problems">Step 2: practise the problems &rarr;</button>`;
   return `<div class="row between">${prev ? `<button class="btn" data-ref="${prev[0]}">&larr; ${label(prev)}</button>` : "<span></span>"}${nextBtn}</div>`;
 }
+// Only for lessons without a quiz or exercises (data structures, patterns): reading them is the lesson.
 const reviewBtn = (key) => `<button class="btn ${learnRead(key) ? "" : "primary"}" data-learnread="${key}">${learnRead(key) ? "Reviewed ✓ (undo)" : "Mark as reviewed"}</button>`;
 
 // ---------- views ----------
@@ -253,6 +289,13 @@ const views = {
       ? `<button class="btn primary" data-ref="${nextUnit[0]}" data-goto="learn">${fresh ? "Start here" : "Continue"}: ${esc(unitLabel(nextUnit))} &rarr;</button>`
       : next.length ? `<button class="btn primary" data-open="${next[0].s}">Next problem: ${esc(next[0].t)} &rarr;</button>`
       : `<button class="btn primary" data-goto-tab="roadmap">Open the roadmap &rarr;</button>`;
+    const levelPick = S.level ? "" : `<div class="card level-pick"><h3 style="margin-top:0">Where are you starting from?</h3>
+      <p class="muted">This sets the order of the Learn path. You can change it any time in Settings.</p>
+      <div class="level-opts">
+        <button class="level-opt" data-level="new"><b>I'm new to programming</b><span class="muted">Start with Python from zero: what values, variables, functions and lists are, in plain language, with small exercises.</span></button>
+        <button class="level-opt" data-level="code"><b>I already code</b><span class="muted">Start with programming principles, then a refresher of your main language, Big-O, data structures and patterns.</span></button>
+      </div></div>`;
+    const langLine = `<p class="lang-line">You're learning in <b style="color:var(--text)">${esc(langName(mainLang()))}</b>${!beginner() ? "" : mainLang() === "py" ? ", starting from zero" : `. Python from zero comes first: it teaches the basics in Python, then the path switches to ${esc(langName(mainLang()))}`}. <button class="link-btn inline-link" data-goto-tab="settings">Change</button></p>`;
     const intro = S.introSeen ? "" : `<div class="card intro"><div class="section-head"><h3>New here? How DSA Prep works</h3><button class="btn small" data-introok>Got it</button></div>
       <ul style="margin-bottom:0">
         <li><b>Follow the three steps in order.</b> Learn a topic, then solve the problems for it. The Roadmap spreads it all over 12 weeks so you always know what this week is about.</li>
@@ -265,11 +308,12 @@ const views = {
       <p class="muted" style="margin:0">${desc}</p>
       <div><div class="row between"><span class="label" style="margin:0">${n1} / ${total} ${unit}</span>${extra}</div>${bar(n1, total)}</div>
       <div class="row">${btn}</div></div>`;
-    return `${intro}<section class="card hero">
+    return `${levelPick}${intro}<section class="card hero">
       <div style="position:relative;z-index:1">
         <div class="eyebrow">${esc(dateStr)} · Week ${wk} of 12</div>
         <h1>${hello}.</h1>
-        <p>DSA Prep gets you ready for coding interviews in three steps: <b style="color:var(--text)">learn</b> programming principles, your language, Big-O, data structures and patterns, <b style="color:var(--text)">practise</b> problems for each pattern, and follow the <b style="color:var(--text)">12-week roadmap</b>. Spaced reviews keep it all fresh.</p>
+        <p>DSA Prep gets you ready for coding interviews in three steps: <b style="color:var(--text)">learn</b> ${beginner() ? "Python from zero, then Big-O, data structures and patterns" : "programming principles, your language, Big-O, data structures and patterns"}, <b style="color:var(--text)">practise</b> problems for each pattern, and follow the <b style="color:var(--text)">12-week roadmap</b>. Spaced reviews keep it all fresh.</p>
+        ${langLine}
         <div class="row" style="margin-top:14px">${primary}${due.length ? `<button class="btn" data-due="1">Review ${due.length} due</button>` : ""}</div>
       </div>
       <div class="ring" title="${done} of ${inc.length} problems solved">
@@ -280,7 +324,9 @@ const views = {
     </section>
     <div class="section-head" style="margin:22px 0 10px"><h3 style="margin:0">How it works</h3><span class="muted">Three steps, in order. Your progress is on each card.</span></div>
     <div class="steps">
-      ${step(1, "Learn", `Start with programming principles, refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have quizzes, exercises and videos.`,
+      ${step(1, "Learn", beginner()
+        ? `Start with Python from zero (no experience needed), then ${esc(langName(mainLang()))}, Big-O, the core data structures and the algorithm patterns interviews use. Lessons have exercises with hints, quizzes and videos.`
+        : `Start with programming principles, refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have quizzes, exercises and videos.`,
         learned, path.length, "topics", nextUnit ? `<span class="muted">Next: ${esc(unitLabel(nextUnit))}</span>` : '<span class="badge done">Done</span>',
         `<button class="btn primary" data-ref="${(nextUnit || path[0])[0]}" data-goto="learn">${learned ? "Continue learning" : "Start learning"} &rarr;</button>`)}
       ${step(2, "Problems", `${PROBLEMS.length} problems grouped by pattern and tagged Easy, Medium or Hard. Open one to code it in the browser, log your attempt and reveal the solution.`,
@@ -315,6 +361,7 @@ const views = {
   },
 
   learn() {
+    if (LESSON_ALIASES[S.refSel]) S.refSel = LESSON_ALIASES[S.refSel];
     const sel = S.refSel || learnPath()[0][0];
     const compact = !!S.refCompact, shut = S.refShut || {}, lang = mainLang();
     const initials = (s) => s.split(/\s+/).filter((w) => /\w/.test(w)).map((w) => w[0].toUpperCase()).join("").slice(0, 2);
@@ -324,21 +371,27 @@ const views = {
         `<button class="side-i ${sel === k ? "active" : ""}" data-ref="${k}" title="${esc(label)}"><span class="lbl">${esc(label)}</span><span class="sh">${esc(short || initials(label))}</span>${extra ? `<span class="muted lbl">${extra}</span>` : ""}</button>`).join(""));
     const tick = (k) => (learnRead(k) ? "✓" : "");
     const langGroup = (lg, title) => grp(title, lg === "py"
-      ? LESSONS.map((l, i) => ["py:" + l.id, lessonLabel(l), `${l.exercises.filter((_, j) => S.ref[l.id + "-" + j]).length}/${l.exercises.length}`, String(i + 1)])
+      ? LESSONS.map((l, i) => ["py:" + l.id, lessonLabel(l), `${pyDoneCount(l)}/${l.exercises.length}`, String(i + 1)])
       : LANG_META[lg].lessons().map((l, i) => [LANG_META[lg].prefix + l.id, lessonLabel(l), `${langLessonDone(lg, l)}/${l.exercises.length}`, (lg === "java" ? "J" : "C") + (i + 1)]));
+    const zeroDone = ZERO_LESSONS.filter(pyLessonDone).length;
+    const zeroGroup = (title) => grp(title, ZERO_LESSONS.map((l, i) => ["zero:" + l.id, lessonLabel(l), `${pyDoneCount(l)}/${l.exercises.length}`, "Z" + (i + 1)]), `${zeroDone}/${ZERO_LESSONS.length}`);
+    const prGroup = (title) => grp(title, PRINCIPLES.map((l, i) => ["pr:" + l.id, `${i + 1}. ${l.name}`, prDone(l) ? "✓" : `${prQuiz(l).filter((q) => S.principles[q.id]).length}/${prQuiz(l).length}`, l.short]),
+      `${PRINCIPLES.filter(prDone).length}/${PRINCIPLES.length}`);
+    const coreGroups = (n) => langGroup(lang, `${n} · ${langName(lang)}`)
+      + grp(`${n + 1} · Complexity`, [["bigo", "Big-O", bigoDone() ? "✓" : `${Object.keys(S.bigo).length}/${BIGO_QUIZ.length}`, "O(n)"]])
+      + grp(`${n + 2} · Data Structures Crash Course`, [["ds:overview", "Start: overview & cheat sheet", tick("ds:overview"), "≡"], ...DS.map((d, i) => ["ds:" + d.id, `${i + 1}. ${d.name}`, tick("ds:" + d.id), d.short])], `${dsCourseDone()}/${DS_COURSE().length}`)
+      + grp(`${n + 3} · Algorithm patterns`, Object.keys(NOTES).map((k) => ["pat:" + k, CATS[k], tick("pat:" + k)]));
     const side = `<button class="side-toggle" id="ref-compact" title="${compact ? "Expand sidebar" : "Compact sidebar"}"><span class="lbl">Compact</span><span>${compact ? "&raquo;" : "&laquo;"}</span></button>`
       + (compact ? "" : `<div class="side-lang"><span class="muted">Main language</span><div class="seg">${LANGS.map(([v, l]) => `<button data-dslang="${v}" class="${lang === v ? "on" : ""}">${l}</button>`).join("")}</div></div>`)
-      + grp("1 · Programming principles", PRINCIPLES.map((l, i) => ["pr:" + l.id, `${i + 1}. ${l.name}`, prDone(l) ? "✓" : `${prQuiz(l).filter((q) => S.principles[q.id]).length}/${prQuiz(l).length}`, l.short]),
-        `${PRINCIPLES.filter(prDone).length}/${PRINCIPLES.length}`)
-      + langGroup(lang, `2 · ${langName(lang)} refresher`)
-      + grp("3 · Complexity", [["bigo", "Big-O", Object.keys(S.bigo).length === BIGO_QUIZ.length || learnRead("bigo") ? "✓" : `${Object.keys(S.bigo).length}/${BIGO_QUIZ.length}`, "O(n)"]])
-      + grp("4 · Data Structures Crash Course", [["ds:overview", "Start: overview & cheat sheet", tick("ds:overview"), "≡"], ...DS.map((d, i) => ["ds:" + d.id, `${i + 1}. ${d.name}`, tick("ds:" + d.id), d.short])], `${dsCourseDone()}/${DS_COURSE().length}`)
-      + grp("5 · Algorithm patterns", Object.keys(NOTES).map((k) => ["pat:" + k, CATS[k], tick("pat:" + k)]))
+      + (beginner()
+        ? zeroGroup("1 · Python from zero") + coreGroups(2) + prGroup("6 · Programming principles (for later)")
+        : zeroGroup("Python from zero (optional)") + prGroup("1 · Programming principles") + coreGroups(2))
       + LANGS.filter(([v]) => v !== lang).map(([v, l]) => langGroup(v, `Also: ${l}`)).join("")
       + grp("Courses", [["courses", "Full courses", "", "▶"]]);
     let body;
     if (sel.startsWith("pr:") && PRINCIPLES.some((l) => l.id === sel.slice(3))) body = refPrinciple(sel.slice(3));
-    else if (sel.startsWith("py:") && LESSONS.some((l) => l.id === sel.slice(3))) body = refPython(sel.slice(3));
+    else if (sel.startsWith("zero:") && ZERO_LESSONS.some((l) => l.id === sel.slice(5))) body = refPython("zero", sel.slice(5));
+    else if (sel.startsWith("py:") && LESSONS.some((l) => l.id === sel.slice(3))) body = refPython("py", sel.slice(3));
     else if (sel.startsWith("j:") && JAVA_LESSONS.some((l) => l.id === sel.slice(2))) body = refLang("java", sel.slice(2));
     else if (sel.startsWith("c:") && CS_LESSONS.some((l) => l.id === sel.slice(2))) body = refLang("cs", sel.slice(2));
     else if (sel === "bigo") body = refBigo();
@@ -348,9 +401,11 @@ const views = {
     else if (sel === "courses") body = refCourses();
     else { S.refSel = learnPath()[0][0]; return views.learn(); }
     const path = learnPath(), learned = path.filter((u) => u[2]).length, part = partOf(sel);
-    const crumbs = `<div class="learn-steps">${PATH_PARTS.map(([k, l], i) => `<span class="${k === part && path.some((u) => u[0] === sel) ? "on" : ""}">${i + 1}. ${k === "lang" ? esc(langName(lang)) : l}</span>`).join('<span class="muted">&rsaquo;</span>')}
+    const crumbs = `<div class="learn-steps">${pathParts().map(([k, l], i) => `<span class="${k === part && path.some((u) => u[0] === sel) ? "on" : ""}">${i + 1}. ${esc(l)}</span>`).join('<span class="muted">&rsaquo;</span>')}
       <span class="muted" style="margin-left:auto">${learned} / ${path.length} topics done</span></div>`;
-    return pageHead(`${stepNum(1)} Learn`, "Work down the sidebar in order: programming principles, your main language, Big-O, data structures, then the patterns. When a pattern clicks, practise its problems.") +
+    return pageHead(`${stepNum(1)} Learn`, beginner()
+      ? "Work down the sidebar in order: Python from zero, then Python, Big-O, data structures and the patterns. The programming principles at the end are for later, once you're comfortable writing code."
+      : "Work down the sidebar in order: programming principles, your main language, Big-O, data structures, then the patterns. When a pattern clicks, practise its problems.") +
       `<div class="ref-layout ${compact ? "compact" : ""}"><aside class="ref-side">${side}</aside><section class="ref-main">${crumbs}${body}</section></div>`;
   },
 
@@ -448,7 +503,9 @@ const views = {
           ${seg("data-codetheme", S.codeTheme || "dark", [["dark", "Visual Studio Dark"], ["match", "Match theme"]])}</div>
       </div>
       <div class="card"><h3>Your plan</h3>
-        <div class="setting"><div><b>Main language</b><div class="muted">Step 1 starts with this language's refresher, and lessons, Big-O, problem starters and solutions are shown in it. Run tests checks Python code only.</div></div>
+        <div class="setting"><div><b>Experience</b><div class="muted">"New to programming" starts the Learn path with Python from zero and leaves the programming principles for later. "Already code" starts with the principles and a language refresher.</div></div>
+          ${seg("data-level", S.level || "new", LEVELS)}</div>
+        <div class="setting"><div><b>Main language</b><div class="muted">The language you're learning in: its lessons come after Python from zero (or after the principles), and Big-O, problem starters and solutions are shown in it. Run tests checks Python code only.</div></div>
           ${seg("data-dslang", mainLang(), LANGS)}</div>
         <div class="setting"><div><b>Start date</b><div class="muted">Week 1 of the roadmap begins on this day. Today is week ${currentWeek()}.</div></div>
           <input type="date" id="s-start" value="${esc(S.start)}"></div>
@@ -467,22 +524,28 @@ const views = {
 };
 
 // ---------- learn: content for each sidebar item ----------
-function refPython(id) {
+// A Python lesson from either track: the lesson, good vs bad practice, then exercises run in the browser.
+// Every exercise shows its task, an example, a hint and a model answer the learner can open.
+function refPython(track, id) {
   warmPython(); // the exercises below run Python
-  const i = LESSONS.findIndex((l) => l.id === id), l = LESSONS[i];
-  const done = l.exercises.filter((_, j) => S.ref[l.id + "-" + j]).length;
-  return `<div class="label">Python</div><h2>${esc(l.title.replace(/^\d+\.\s*/, ""))}</h2>
-    <p class="muted">${done} / ${l.exercises.length} exercises passed (${refDone()} / ${refTotal()} across all Python lessons). Your code runs against tests right here; Python loads on first run. Pass every exercise to complete the lesson.</p>
-    <div class="card">${l.body}<pre>${esc(l.example)}</pre>
-      <div class="row"><button class="btn small" data-example="${i}">Try this example in the scratchpad</button>
-      <a class="btn small" href="${yt(LESSON_YT[l.id])}" target="_blank" rel="noopener">More videos</a></div>
+  const T = PY_TRACKS[track], ls = T.lessons(), i = ls.findIndex((l) => l.id === id), l = ls[i];
+  const head = track === "zero" ? `Python from zero · Lesson ${i + 1} of ${ls.length}` : "Python";
+  return `<div class="label">${head}</div><h2>${esc(l.title.replace(/^\d+\.\s*/, ""))}</h2>
+    <p class="muted">${pyDoneCount(l)} / ${l.exercises.length} exercises passed (${refDone(ls)} / ${refTotal(ls)} across ${T.name}). Your code runs against tests right here; Python loads on first run. Pass every exercise to complete the lesson.</p>
+    <div class="card lesson-body">${l.body}<h3>Try it</h3><pre class="language-py">${esc(l.example)}</pre>
+      <div class="row"><button class="btn small" data-example="${track}:${i}">Run this example in the scratchpad</button>
+      <a class="btn small" href="${yt(LESSON_YT[l.id] || "python " + lessonLabel(l) + " tutorial")}" target="_blank" rel="noopener">More videos</a></div>
       ${vids(EXPLAINERS.python[l.id])}</div>
     ${prPractice(l.practice, "py")}
-    ${l.exercises.map((ex, j) => { const eid = l.id + "-" + j; return `<div class="card"><h3 class="ex-title">Exercise ${j + 1}${S.ref[eid] ? ' <span class="badge done">Passed</span>' : ""}</h3>
-      <p>${esc(ex.prompt)}</p><textarea id="ex-${eid}" class="ex" rows="${Math.max(5, ex.starter.split("\n").length + 2)}" spellcheck="false">${esc(S.code["ex:" + eid] ?? ex.starter)}</textarea>
-      <div class="row"><button class="btn primary small" data-ex="${i}:${j}">Run tests</button><button class="btn small" data-exreset="${i}:${j}">Reset</button></div>
-      <pre id="res-${eid}" class="muted" style="display:none"></pre></div>`; }).join("")}
-    ${learnNav("py:" + id)}`;
+    ${l.exercises.map((ex, j) => { const eid = exKey(l, ex, j); return `<div class="card ex-card"><h3 class="ex-title">Exercise ${j + 1}${S.ref[eid] ? ' <span class="badge done">Passed</span>' : ""}</h3>
+      <p>${esc(ex.prompt)}</p>
+      ${ex.example ? `<div class="ex-example"><div class="label">Example</div><pre>${esc(ex.example)}</pre></div>` : ""}
+      <textarea id="ex-${eid}" class="ex" rows="${Math.max(5, ex.starter.split("\n").length + 2)}" spellcheck="false" aria-label="Your code for exercise ${j + 1}">${esc(S.code["ex:" + eid] ?? ex.starter)}</textarea>
+      <div class="row"><button class="btn primary small" data-ex="${track}:${i}:${j}">Run tests</button><button class="btn small" data-exreset="${track}:${i}:${j}">Reset</button></div>
+      <pre id="res-${eid}" class="muted" style="display:none"></pre>
+      ${ex.hint ? `<details class="ex-help"><summary>Hint</summary><p>${md(ex.hint)}</p></details>` : ""}
+      ${ex.solution ? `<details class="ex-help"><summary>Model answer</summary><p class="muted">Try the hint first. If you open this, read it line by line, then close it and type your own version: that's what makes it stick.</p><pre class="language-py">${esc(ex.solution)}</pre></details>` : ""}</div>`; }).join("")}
+    ${learnNav(T.prefix + id)}`;
 }
 
 function refBigo() {
@@ -503,7 +566,7 @@ function refBigo() {
       return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.bigo[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><pre class="language-${lang}">${esc(forLang(q.q))}</pre>
         <div class="row">${BIGO_OPTIONS.map((o) => `<button class="btn small ${done && o === q.a ? "primary" : ""}" data-bq="${q.id}" data-opt="${esc(o)}" ${done ? "disabled" : ""}>${o}</button>`).join("")}</div>
         ${done ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite (you chose " + esc(ch) + "). Answer: " + q.a + "."}</b> ${esc(forLang(q.why))}</p><button class="btn small" data-bretry="${q.id}">Try again</button>` : ""}</div>`;
-    }).join("") + `<div class="row" style="margin-bottom:var(--gap)">${reviewBtn("bigo")}</div>${learnNav("bigo")}`;
+    }).join("") + learnNav("bigo");
 }
 
 const langSeg = () => `<div class="seg">${LANGS.map(([v, l]) => `<button data-dslang="${v}" class="${mainLang() === v ? "on" : ""}">${l}</button>`).join("")}</div>`;
@@ -583,7 +646,8 @@ function refPrinciple(id) {
       <div class="pq-opts">${q.options.map((o, j) => `<button class="btn small ${answered && j === q.a ? "primary" : ""} ${answered && j === ch && j !== q.a ? "pq-wrong" : ""}" data-pq="${q.id}" data-popt="${j}" ${answered ? "disabled" : ""}>${md(forLang(o))}</button>`).join("")}</div>
       ${answered ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite."}</b> ${md(forLang(q.why))}</p><button class="btn small" data-pretry="${q.id}">Try again</button>` : ""}</div>`;
   }).join("");
-  return `<div class="label">Programming principles · ${esc(l.part)} · Lesson ${n} of ${PRINCIPLES.length}</div><h2>${esc(l.name)}</h2>
+  const later = beginner() ? `<div class="card note-later"><b>For later.</b> These lessons are about designing bigger programs well. If you're new to programming, finish <button class="link-btn inline-link" data-ref="zero:${ZERO_LESSONS[0].id}">Python from zero</button> and the Python lessons first; they make much more sense once you've written some code.</div>` : "";
+  return `<div class="label">Programming principles${beginner() ? " (for later)" : ""} · ${esc(l.part)} · Lesson ${n} of ${PRINCIPLES.length}</div><h2>${esc(l.name)}</h2>${later}
     <div class="card"><p>${md(forLang(l.what))}</p>
       <h3>Key ideas</h3><ul>${langList(l.points).map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
     ${(l.topics || []).map((t) => prTopic(t, lang)).join("")}
@@ -598,9 +662,9 @@ function refPrinciple(id) {
     </div>
     ${prPractice(l.practice, lang)}
     <div class="card"><h3 style="margin:0">Quick check <span class="muted">${solved} / ${qs.length} solved</span></h3>
-      <p class="muted" style="margin-bottom:0">Get every question right, or mark the lesson as reviewed, to complete it.</p></div>
+      <p class="muted" style="margin-bottom:0">Get every question right to complete the lesson. A wrong answer can be tried again.</p></div>
     ${quiz}
-    <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("pr:" + id)}</div>${learnNav("pr:" + id)}`;
+    ${learnNav("pr:" + id)}`;
 }
 
 function refDS(id) {
@@ -647,8 +711,8 @@ function mockBlock() {
 }
 
 // ---------- Python lesson exercises ----------
-async function runExercise(i, j) {
-  const l = LESSONS[i], ex = l.exercises[j], id = l.id + "-" + j;
+async function runExercise(track, i, j) {
+  const l = PY_TRACKS[track].lessons()[i], ex = l.exercises[j], id = exKey(l, ex, j);
   const code = $("#ex-" + id).value, res = $("#res-" + id);
   S.code["ex:" + id] = code; save();
   res.style.display = "block"; res.textContent = "Running...";
@@ -696,8 +760,8 @@ function refLang(lang, id) {
     ${learnNav(m.prefix + id)}`;
 }
 
-const refTotal = () => LESSONS.reduce((n, l) => n + l.exercises.length, 0);
-const refDone = () => Object.keys(S.ref).filter((k) => S.ref[k]).length;
+const refTotal = (ls) => ls.reduce((n, l) => n + l.exercises.length, 0);
+const refDone = (ls) => ls.reduce((n, l) => n + pyDoneCount(l), 0);
 
 // ---------- wiring ----------
 const NS = [10, 100, 1e3, 1e4, 1e5, 1e6, 1e7];
@@ -748,6 +812,8 @@ document.addEventListener("click", (e) => {
   if (t.dataset.log) return logDialog(t.dataset.log);
   if (t.closest("[data-introok]")) { S.introSeen = true; save(); return rerender(); }
   if (t.closest("[data-introshow]")) { S.introSeen = false; save(); return go("home"); }
+  const lv = t.closest("[data-level]");
+  if (lv) { S.level = lv.dataset.level; save(); return rerender(); }
   const lr = t.closest("[data-learnread]");
   if (lr) {
     const k = lr.dataset.learnread; S.learnRead = S.learnRead || {};
@@ -827,11 +893,11 @@ document.addEventListener("click", (e) => {
     return navigator.clipboard?.writeText(l.code[mainLang()]).then(() => { t.textContent = "Copied!"; }, () => {});
   }
   if (t.dataset.goto) return go(t.dataset.goto);
-  if (t.dataset.example) { S.code[""] = LESSONS[+t.dataset.example].example; save(); return openWorkspace(""); }
-  if (t.dataset.ex) { const [i, j] = t.dataset.ex.split(":").map(Number); return runExercise(i, j); }
+  if (t.dataset.example) { const [tr, i] = t.dataset.example.split(":"); S.code[""] = PY_TRACKS[tr].lessons()[+i].example; save(); return openWorkspace(""); }
+  if (t.dataset.ex) { const [tr, i, j] = t.dataset.ex.split(":"); return runExercise(tr, +i, +j); }
   if (t.dataset.exreset) {
-    const [i, j] = t.dataset.exreset.split(":").map(Number), id = LESSONS[i].id + "-" + j;
-    delete S.code["ex:" + id]; save(); return rerender();
+    const [tr, i, j] = t.dataset.exreset.split(":"), l = PY_TRACKS[tr].lessons()[+i];
+    delete S.code["ex:" + exKey(l, l.exercises[+j], +j)]; save(); return rerender();
   }
   if (t.dataset.diffgo) { views._ws = null; views._f = { cat: "", diff: t.dataset.diffgo, status: "", q: "", co: "" }; return go("problems"); }
   if (t.dataset.cdel) { S.companies.splice(+t.dataset.cdel, 1); save(); return render(); }

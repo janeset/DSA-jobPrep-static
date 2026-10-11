@@ -780,3 +780,19 @@ h3.ex-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; fon
 .pq-opts .btn { height: auto; min-height: 30px; padding: 6px 12px; white-space: normal; text-align: left; justify-content: flex-start; line-height: 1.4; max-width: 100%; }
 .pq-opts .btn.pq-wrong { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
 .pq-opts .btn.pq-wrong:disabled { opacity: 1; }
+
+/* Beginner track: the first-visit level choice, the language line on Home, exercise examples, hints and model answers */
+.level-pick { border-left: 3px solid var(--accent); }
+.level-opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.level-opt { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; text-align: left; font: inherit; color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer; }
+.level-opt:hover, .level-opt:focus-visible { border-color: var(--accent); }
+.lang-line { margin: 10px 0 0; color: var(--muted); }
+.link-btn.inline-link, .inline-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.lesson-body h3 { margin: 18px 0 6px; }
+.lesson-body ol li, .lesson-body ul li { margin-bottom: 4px; }
+.ex-example .label { margin: 4px 0 2px; }
+.ex-example pre { margin: 0 0 10px; }
+.ex-help { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+.ex-help > summary { font-weight: 500; }
+.ex-help[open] > summary { margin-bottom: 6px; }
+.note-later { border-left: 3px solid var(--warn); }

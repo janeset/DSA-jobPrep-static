@@ -2,11 +2,17 @@
 const V = (id, title, ch) => ({ id, title, ch });
 const EXPLAINERS = {
   python: {
-    basics: [V("rfscVS0vtbw", "Learn Python - Full Course for Beginners", "freeCodeCamp.org"), V("kqtD5dpn9C8", "Python for Beginners - Learn Coding with Python in 1 Hour", "Programming with Mosh")],
+    values: [V("kqtD5dpn9C8", "Python for Beginners - Learn Coding with Python in 1 Hour", "Programming with Mosh"), V("rfscVS0vtbw", "Learn Python - Full Course for Beginners", "freeCodeCamp.org")],
+    "first-functions": [V("9Os0o3wzS_I", "Python Tutorial for Beginners 8: Functions", "Corey Schafer")],
+    "first-lists": [V("W8KRzm-HUcc", "Python Tutorial for Beginners 4: Lists, Tuples, and Sets", "Corey Schafer")],
+    types: [V("kqtD5dpn9C8", "Python for Beginners - Learn Coding with Python in 1 Hour", "Programming with Mosh")],
+    conditionals: [V("rfscVS0vtbw", "Learn Python - Full Course for Beginners", "freeCodeCamp.org")],
+    loops: [V("rfscVS0vtbw", "Learn Python - Full Course for Beginners", "freeCodeCamp.org")],
     strings: [V("k9TUPpGqYTo", "Python Tutorial for Beginners 2: Strings", "Corey Schafer")],
     lists: [V("W8KRzm-HUcc", "Python Tutorial for Beginners 4: Lists, Tuples, and Sets", "Corey Schafer")],
     dicts: [V("daefaLgNkw0", "Python Tutorial for Beginners 5: Dictionaries", "Corey Schafer")],
-    functions: [V("9Os0o3wzS_I", "Python Tutorial for Beginners 8: Functions", "Corey Schafer"), V("QVdf0LgmICw", "Variable Scope: LEGB rule, global/nonlocal", "Corey Schafer")],
+    functions: [V("9Os0o3wzS_I", "Python Tutorial for Beginners 8: Functions", "Corey Schafer")],
+    "functions-more": [V("QVdf0LgmICw", "Variable Scope: LEGB rule, global/nonlocal", "Corey Schafer")],
     comprehensions: [V("3dt4OGnU5sM", "Comprehensions - How they work and why to use them", "Corey Schafer"), V("bD05uGo_sVI", "Generators - How to use them and the benefits", "Corey Schafer")],
     classes: [V("ZDa-Z5JzLYM", "Python OOP Tutorial 1: Classes and Instances", "Corey Schafer")],
     errors: [V("NIWwJbo-9_8", "Using Try/Except Blocks for Error Handling", "Corey Schafer")],

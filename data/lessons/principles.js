@@ -3231,7 +3231,7 @@ if (config.TryGetValue("port", out var raw) && !int.TryParse(raw, out port))
     return name == null ? 0 : name.length();
 }`, cs: `int? ParseOrNull(string s) => int.TryParse(s, out int n) ? n : null;` } },
     ],
-    interview: "Before coding, list the edge cases out loud; after coding, walk one through by hand. Interviewers notice, and it's where a QA background shines.",
+    interview: "Before coding, list the edge cases out loud; after coding, walk one through by hand. Interviewers notice, and it catches bugs before they do.",
     quiz: [
       { id: "err1", q: "Which inputs should you test first for most array problems?",
         options: ["A very large random array", "Only the example from the prompt", "An empty array and a single element", "An array of strings"], a: 2,

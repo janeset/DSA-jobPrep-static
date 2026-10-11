@@ -29,9 +29,10 @@ function buildSearchIndex() {
   const ref = (key, title, sub, text) => add("refresher", title, sub, text, () => { S.refSel = key; go("learn"); });
   const clean = (t) => t.replace(/^\d+\.\s*/, "");
   PRINCIPLES.forEach((l) => ref("pr:" + l.id, l.name, "Programming principles", [l.what, ...l.points].map(allLangText).join(" ").replace(/`/g, "")));
-  LESSONS.forEach((l) => ref("py:" + l.id, clean(l.title), "Python refresher", stripHtml(l.body)));
-  JAVA_LESSONS.forEach((l) => ref("j:" + l.id, clean(l.title), "Java refresher", stripHtml(l.body)));
-  CS_LESSONS.forEach((l) => ref("c:" + l.id, clean(l.title), "C# refresher", stripHtml(l.body)));
+  ZERO_LESSONS.forEach((l) => ref("zero:" + l.id, clean(l.title), "Python from zero", stripHtml(l.body)));
+  LESSONS.forEach((l) => ref("py:" + l.id, clean(l.title), "Python", stripHtml(l.body)));
+  JAVA_LESSONS.forEach((l) => ref("j:" + l.id, clean(l.title), "Java", stripHtml(l.body)));
+  CS_LESSONS.forEach((l) => ref("c:" + l.id, clean(l.title), "C#", stripHtml(l.body)));
   ref("ds:overview", "Data Structures Crash Course", "Overview & cheat sheet", "data structures course cheat sheet costs");
   DS.forEach((d) => ref("ds:" + d.id, d.name, "Data Structures Crash Course", allLangText(d.what)));
   ref("bigo", "Big-O", "Complexity", "time space complexity growth calculator quiz");

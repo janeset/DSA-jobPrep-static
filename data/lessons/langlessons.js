@@ -794,8 +794,8 @@ int paths(int i, int j) {
     }],
   },
   {
-    id: "testing", title: "11. Testing with JUnit (your QA edge)",
-    body: `<p>Your QA background transfers directly. JUnit 5 is the standard Java test framework, and the habits are the same ones you already use.</p>
+    id: "testing", title: "11. Testing with JUnit",
+    body: `<p>A <b>unit test</b> is a small piece of code that calls your code with a known input and checks the result. JUnit 5 is the standard Java test framework.</p>
       <ul><li><code>@Test</code> methods with <code>assertEquals(expected, actual)</code>, <code>assertTrue</code>, <code>assertThrows(Ex.class, () -&gt; ...)</code>.</li>
       <li><code>@ParameterizedTest</code> with <code>@CsvSource</code> turns a table of cases into tests, just like a test-case matrix.</li>
       <li>Arrange, act, assert. Name tests after behaviour: <code>clampKeepsValuesInRange</code>.</li>
@@ -1661,8 +1661,8 @@ int Paths(int i, int j)
     }],
   },
   {
-    id: "testing", title: "11. Testing with xUnit (your QA edge)",
-    body: `<p>xUnit is the most common .NET test framework (NUnit and MSTest are similar). Run tests with <code>dotnet test</code>.</p>
+    id: "testing", title: "11. Testing with xUnit",
+    body: `<p>A <b>unit test</b> is a small piece of code that calls your code with a known input and checks the result. xUnit is the most common .NET test framework (NUnit and MSTest are similar). Run tests with <code>dotnet test</code>.</p>
       <ul><li><code>[Fact]</code> is a single test. <code>[Theory]</code> with <code>[InlineData(...)]</code> runs a table of cases, like a test-case matrix.</li>
       <li><code>Assert.Equal(expected, actual)</code>, <code>Assert.True</code>, <code>Assert.Throws&lt;ArgumentException&gt;(() =&gt; ...)</code>.</li>
       <li>Name tests <code>Method_Scenario_Expected</code> and follow arrange, act, assert.</li>

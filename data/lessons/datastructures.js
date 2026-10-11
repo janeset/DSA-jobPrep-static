@@ -1,6 +1,7 @@
 // Data structures refresher: concepts, costs, built-ins, and code in Python, Java and C#.
 // Java/C# snippets are focused fragments: put statements inside a method (or use top-level
 // statements in C#) and keep the imports/usings shown at the top.
+// `practice` holds good vs bad code pairs (shown after the code, like the principles lessons).
 
 const DS_OVERVIEW = {
   table: [
@@ -46,6 +47,79 @@ const DS = [
         java: "Arrays.fill(grid, row) puts the same row object in every slot. new int[r][c] creates independent rows.",
         cs: "A jagged array new int[r][] starts with every row null: create each row in a loop, or use int[r, c]." },
       "Off-by-one errors at the boundaries: test empty and single-element arrays."],
+    practice: [
+      { why: "Inserting at the front shifts every element, so building a list that way is O(n²). Append (O(1)) and reverse once at the end.",
+        bad: { py: `res = []
+for x in nums:
+    res.insert(0, x)        # shifts everything: O(n) each time`, java: `List<Integer> res = new ArrayList<>();
+for (int x : nums) {
+    res.add(0, x);          // shifts everything: O(n) each time
+}`, cs: `var res = new List<int>();
+foreach (int x in nums)
+{
+    res.Insert(0, x);       // shifts everything: O(n) each time
+}` },
+        good: { py: `res = []
+for x in nums:
+    res.append(x)           # O(1) amortized
+res.reverse()               # once, O(n)`, java: `List<Integer> res = new ArrayList<>();
+for (int x : nums) {
+    res.add(x);             // O(1) amortized
+}
+Collections.reverse(res);   // once, O(n)`, cs: `var res = new List<int>();
+foreach (int x in nums)
+{
+    res.Add(x);             // O(1) amortized
+}
+res.Reverse();              // once, O(n)` } },
+      { why: { py: "Removing from a list while looping over it shifts the items under the loop, so some are skipped. Build a new list instead.",
+          java: "Removing from a list inside a for-each throws `ConcurrentModificationException`. `removeIf` does it safely in one pass.",
+          cs: "Removing from a list inside `foreach` throws `InvalidOperationException`. `RemoveAll` does it safely in one pass." },
+        bad: { py: `for x in nums:
+    if x < 0:
+        nums.remove(x)      # [-1, -2, 3] leaves [-2, 3]`, java: `for (Integer x : nums) {
+    if (x < 0) nums.remove(x);   // ConcurrentModificationException
+}`, cs: `foreach (int x in nums)
+{
+    if (x < 0) nums.Remove(x);   // InvalidOperationException
+}` },
+        good: { py: `nums = [x for x in nums if x >= 0]   # a new list, nothing skipped`, java: `nums.removeIf(x -> x < 0);   // safe, one pass`, cs: `nums.RemoveAll(x => x < 0);  // safe, one pass` } },
+      { why: "Re-adding the whole window at every position is O(n·k). Slide it instead: add the item that enters and subtract the one that leaves, for O(n).",
+        bad: { py: `best = float("-inf")
+for i in range(len(nums) - k + 1):
+    best = max(best, sum(nums[i:i + k]))   # re-adds k items each time`, java: `int best = Integer.MIN_VALUE;
+for (int i = 0; i + k <= nums.length; i++) {
+    int sum = 0;
+    // re-adds k items each time
+    for (int j = i; j < i + k; j++) sum += nums[j];
+    best = Math.max(best, sum);
+}`, cs: `int best = int.MinValue;
+for (int i = 0; i + k <= nums.Length; i++)
+{
+    int sum = 0;
+    // re-adds k items each time
+    for (int j = i; j < i + k; j++) sum += nums[j];
+    best = Math.Max(best, sum);
+}` },
+        good: { py: `window = sum(nums[:k])
+best = window
+for i in range(k, len(nums)):
+    window += nums[i] - nums[i - k]        # one in, one out
+    best = max(best, window)`, java: `int window = 0;
+for (int i = 0; i < k; i++) window += nums[i];
+int best = window;
+for (int i = k; i < nums.length; i++) {
+    window += nums[i] - nums[i - k];       // one in, one out
+    best = Math.max(best, window);
+}`, cs: `int window = 0;
+for (int i = 0; i < k; i++) window += nums[i];
+int best = window;
+for (int i = k; i < nums.Length; i++)
+{
+    window += nums[i] - nums[i - k];       // one in, one out
+    best = Math.Max(best, window);
+}` } },
+    ],
     code: {
       py: `nums = [3, 1, 4]          # dynamic array (list)
 nums.append(1)            # O(1) amortized
@@ -107,6 +181,78 @@ grid[0, 1] = 5;`,
       { py: "Slices s[a:b] stop before b, and negative indexes count from the end (s[-1] is the last character).",
         java: "Compare contents with .equals(), never ==. substring(start, end) stops before end.",
         cs: "Substring(start, length) takes a length, not an end index." }],
+    practice: [
+      { why: "Strings are immutable, so each `+=` copies everything built so far: O(n²) in a loop. Collect the pieces and join once.",
+        bad: { py: `out = ""
+for word in words:
+    out += word + ","       # copies the whole string each time`, java: `String out = "";
+for (String word : words) {
+    out += word + ",";      // copies the whole string each time
+}`, cs: `string output = "";
+foreach (string word in words)
+{
+    output += word + ",";   // copies the whole string each time
+}` },
+        good: { py: `out = ",".join(words)    # one pass, one copy`, java: `StringBuilder sb = new StringBuilder();
+for (String word : words) {
+    sb.append(word).append(',');   // O(1) amortized
+}
+String out = sb.toString();`, cs: `var sb = new StringBuilder();
+foreach (string word in words)
+{
+    sb.Append(word).Append(',');   // O(1) amortized
+}
+string output = sb.ToString();` } },
+      { why: "Counting each character with a scan of the whole string is O(n) per character. One pass with a counter (or a 26-slot array) is O(n).",
+        bad: { py: `counts = {c: s.count(c) for c in s}    # a full scan per character`, java: `Map<Character, Integer> counts = new HashMap<>();
+for (char c : s.toCharArray()) {
+    int n = 0;
+    // a full scan per character
+    for (char d : s.toCharArray()) if (d == c) n++;
+    counts.put(c, n);
+}`, cs: `var counts = new Dictionary<char, int>();
+foreach (char c in s)
+{
+    counts[c] = s.Count(d => d == c);   // a full scan per character
+}` },
+        good: { py: `from collections import Counter
+
+counts = Counter(s)                    # one pass`, java: `int[] counts = new int[26];           // lowercase a-z
+for (char c : s.toCharArray()) {
+    counts[c - 'a']++;                 // one pass
+}`, cs: `var counts = new Dictionary<char, int>();
+foreach (char c in s)
+{
+    counts[c] = counts.GetValueOrDefault(c) + 1;   // one pass
+}` } },
+      { why: "The built-in method is shorter, already tested, and says what you mean. Hand-written index loops are where off-by-one bugs live.",
+        bad: { py: `def has_prefix(word, prefix):
+    if len(prefix) > len(word):
+        return False
+    for i in range(len(prefix)):
+        if word[i] != prefix[i]:
+            return False
+    return True`, java: `boolean hasPrefix(String word, String prefix) {
+    if (prefix.length() > word.length()) return false;
+    for (int i = 0; i < prefix.length(); i++) {
+        if (word.charAt(i) != prefix.charAt(i)) return false;
+    }
+    return true;
+}`, cs: `bool HasPrefix(string word, string prefix)
+{
+    if (prefix.Length > word.Length) return false;
+    for (int i = 0; i < prefix.Length; i++)
+    {
+        if (word[i] != prefix[i]) return false;
+    }
+    return true;
+}` },
+        good: { py: `def has_prefix(word, prefix):
+    return word.startswith(prefix)`, java: `boolean hasPrefix(String word, String prefix) {
+    return word.startsWith(prefix);
+}`, cs: `bool HasPrefix(string word, string prefix) =>
+    word.StartsWith(prefix, StringComparison.Ordinal);` } },
+    ],
     code: {
       py: `s = "hello"
 print(s[0], s[-1], s[1:4])     # h o ell
@@ -165,6 +311,160 @@ bool same = s == "hello";                        // == compares content in C#`,
       { py: "Always check node and node.next for None before following them.",
         java: "Always check node and node.next for null before following them.",
         cs: "Always check node and node.next for null before following them." }],
+    practice: [
+      { why: "Once `next` is overwritten, the rest of the list is unreachable. Save the next node first, then rewire.",
+        bad: { py: `def reverse(head):
+    prev, node = None, head
+    while node:
+        node.next = prev    # the rest of the list is lost
+        prev = node
+        node = node.next    # now points backwards
+    return prev`, java: `ListNode reverse(ListNode head) {
+    ListNode prev = null, node = head;
+    while (node != null) {
+        node.next = prev;   // the rest of the list is lost
+        prev = node;
+        node = node.next;   // now points backwards
+    }
+    return prev;
+}`, cs: `ListNode Reverse(ListNode head)
+{
+    ListNode prev = null, node = head;
+    while (node != null)
+    {
+        node.next = prev;   // the rest of the list is lost
+        prev = node;
+        node = node.next;   // now points backwards
+    }
+    return prev;
+}` },
+        good: { py: `def reverse(head):
+    prev, node = None, head
+    while node:
+        nxt = node.next     # save the rest first
+        node.next = prev
+        prev, node = node, nxt
+    return prev`, java: `ListNode reverse(ListNode head) {
+    ListNode prev = null, node = head;
+    while (node != null) {
+        ListNode nxt = node.next;   // save the rest first
+        node.next = prev;
+        prev = node;
+        node = nxt;
+    }
+    return prev;
+}`, cs: `ListNode Reverse(ListNode head)
+{
+    ListNode prev = null, node = head;
+    while (node != null)
+    {
+        var nxt = node.next;        // save the rest first
+        node.next = prev;
+        prev = node;
+        node = nxt;
+    }
+    return prev;
+}` } },
+      { why: "A dummy node before the head means removing the first node is no different from removing any other, so the special case disappears.",
+        bad: { py: `def remove(head, val):
+    while head and head.val == val:    # special case: the front
+        head = head.next
+    node = head
+    while node and node.next:
+        if node.next.val == val:
+            node.next = node.next.next
+        else:
+            node = node.next
+    return head`, java: `ListNode remove(ListNode head, int val) {
+    // special case: the front
+    while (head != null && head.val == val) head = head.next;
+    ListNode node = head;
+    while (node != null && node.next != null) {
+        if (node.next.val == val) node.next = node.next.next;
+        else node = node.next;
+    }
+    return head;
+}`, cs: `ListNode Remove(ListNode head, int val)
+{
+    // special case: the front
+    while (head != null && head.val == val) head = head.next;
+    var node = head;
+    while (node != null && node.next != null)
+    {
+        if (node.next.val == val) node.next = node.next.next;
+        else node = node.next;
+    }
+    return head;
+}` },
+        good: { py: `def remove(head, val):
+    dummy = ListNode(0, head)          # a node before the head
+    node = dummy
+    while node.next:
+        if node.next.val == val:
+            node.next = node.next.next
+        else:
+            node = node.next
+    return dummy.next`, java: `ListNode remove(ListNode head, int val) {
+    ListNode dummy = new ListNode(0);  // a node before the head
+    dummy.next = head;
+    ListNode node = dummy;
+    while (node.next != null) {
+        if (node.next.val == val) node.next = node.next.next;
+        else node = node.next;
+    }
+    return dummy.next;
+}`, cs: `ListNode Remove(ListNode head, int val)
+{
+    var dummy = new ListNode(0) { next = head };   // a node before the head
+    var node = dummy;
+    while (node.next != null)
+    {
+        if (node.next.val == val) node.next = node.next.next;
+        else node = node.next;
+    }
+    return dummy.next;
+}` } },
+      { why: "Copying the values into an array costs O(n) extra space. A fast pointer moving two steps for each slow step finds the middle in one pass with O(1) space.",
+        bad: { py: `def middle(head):
+    vals = []
+    while head:
+        vals.append(head.val)          # O(n) extra space
+        head = head.next
+    return vals[len(vals) // 2]`, java: `int middle(ListNode head) {
+    List<Integer> vals = new ArrayList<>();
+    // O(n) extra space
+    for (ListNode n = head; n != null; n = n.next) vals.add(n.val);
+    return vals.get(vals.size() / 2);
+}`, cs: `int Middle(ListNode head)
+{
+    var vals = new List<int>();
+    // O(n) extra space
+    for (var n = head; n != null; n = n.next) vals.Add(n.val);
+    return vals[vals.Count / 2];
+}` },
+        good: { py: `def middle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next               # one step
+        fast = fast.next.next          # two steps
+    return slow.val`, java: `int middle(ListNode head) {
+    ListNode slow = head, fast = head;
+    while (fast != null && fast.next != null) {
+        slow = slow.next;              // one step
+        fast = fast.next.next;         // two steps
+    }
+    return slow.val;
+}`, cs: `int Middle(ListNode head)
+{
+    ListNode slow = head, fast = head;
+    while (fast != null && fast.next != null)
+    {
+        slow = slow.next;              // one step
+        fast = fast.next.next;         // two steps
+    }
+    return slow.val;
+}` } },
+    ],
     code: {
       py: `class ListNode:
     def __init__(self, val=0, next=None):
@@ -245,6 +545,157 @@ var reversed = Reverse(head);         // 3 -> 2 -> 1`,
         cs: "Pop() and Peek() on an empty Stack<T> throw InvalidOperationException. Check Count first, or use TryPop." },
       { java: "Prefer ArrayDeque over the legacy, synchronized Stack class." },
       { java: "Compare boxed Characters and Integers with .equals(), not ==." }],
+    practice: [
+      { why: { py: "The top of a list-based stack belongs at the end: `append` and `pop()` are O(1), while inserting or popping at index 0 shifts everything.",
+          java: "`Stack` is a legacy class with synchronised, slower methods. `ArrayDeque` is the recommended stack.",
+          cs: "Using the front of a `List` as the top shifts every element on each push and pop. `Stack<T>` does both in O(1)." },
+        bad: { py: `stack = []
+stack.insert(0, x)          # O(n): shifts everything
+top = stack.pop(0)          # O(n)`, java: `Stack<Integer> stack = new Stack<>();   // legacy, synchronised
+stack.push(x);
+int top = stack.pop();`, cs: `var stack = new List<int>();
+stack.Insert(0, x);         // O(n): shifts everything
+int top = stack[0];
+stack.RemoveAt(0);          // O(n)` },
+        good: { py: `stack = []
+stack.append(x)             # O(1)
+top = stack.pop()           # O(1)`, java: `Deque<Integer> stack = new ArrayDeque<>();
+stack.push(x);              // O(1)
+int top = stack.pop();      // O(1)`, cs: `var stack = new Stack<int>();
+stack.Push(x);              // O(1)
+int top = stack.Pop();      // O(1)` } },
+      { why: "A closing bracket can arrive when the stack is empty, and leftover openers mean the string isn't balanced. Check both.",
+        bad: { py: `def valid(s):
+    pairs = {")": "(", "]": "["}
+    stack = []
+    for c in s:
+        if c in pairs:
+            if stack.pop() != pairs[c]:     # IndexError on ")"
+                return False
+        else:
+            stack.append(c)
+    return True                             # "((" counts as valid`, java: `boolean valid(String s) {
+    Map<Character, Character> pairs = Map.of(')', '(', ']', '[');
+    Deque<Character> stack = new ArrayDeque<>();
+    for (char c : s.toCharArray()) {
+        if (pairs.containsKey(c)) {
+            // throws on ")"
+            if (!stack.pop().equals(pairs.get(c))) return false;
+        } else {
+            stack.push(c);
+        }
+    }
+    return true;                            // "((" counts as valid
+}`, cs: `bool Valid(string s)
+{
+    var pairs = new Dictionary<char, char> { [')'] = '(', [']'] = '[' };
+    var stack = new Stack<char>();
+    foreach (char c in s)
+    {
+        if (pairs.ContainsKey(c))
+        {
+            if (stack.Pop() != pairs[c]) return false;   // throws on ")"
+        }
+        else stack.Push(c);
+    }
+    return true;                            // "((" counts as valid
+}` },
+        good: { py: `def valid(s):
+    pairs = {")": "(", "]": "["}
+    stack = []
+    for c in s:
+        if c in pairs:
+            if not stack or stack.pop() != pairs[c]:
+                return False
+        else:
+            stack.append(c)
+    return not stack                        # every bracket closed`, java: `boolean valid(String s) {
+    Map<Character, Character> pairs = Map.of(')', '(', ']', '[');
+    Deque<Character> stack = new ArrayDeque<>();
+    for (char c : s.toCharArray()) {
+        if (pairs.containsKey(c)) {
+            if (stack.isEmpty() || !stack.pop().equals(pairs.get(c)))
+                return false;
+        } else {
+            stack.push(c);
+        }
+    }
+    return stack.isEmpty();                 // every bracket closed
+}`, cs: `bool Valid(string s)
+{
+    var pairs = new Dictionary<char, char> { [')'] = '(', [']'] = '[' };
+    var stack = new Stack<char>();
+    foreach (char c in s)
+    {
+        if (pairs.TryGetValue(c, out char open))
+        {
+            if (!stack.TryPop(out char top) || top != open) return false;
+        }
+        else stack.Push(c);
+    }
+    return stack.Count == 0;                // every bracket closed
+}` } },
+      { why: "\"Next greater element\" with nested loops is O(n²). A stack of indexes still waiting for an answer handles each index once: O(n).",
+        bad: { py: `def next_greater(nums):
+    res = [-1] * len(nums)
+    for i in range(len(nums)):
+        for j in range(i + 1, len(nums)):  # O(n²)
+            if nums[j] > nums[i]:
+                res[i] = nums[j]
+                break
+    return res`, java: `int[] nextGreater(int[] nums) {
+    int[] res = new int[nums.length];
+    Arrays.fill(res, -1);
+    for (int i = 0; i < nums.length; i++) {
+        for (int j = i + 1; j < nums.length; j++) {   // O(n²)
+            if (nums[j] > nums[i]) { res[i] = nums[j]; break; }
+        }
+    }
+    return res;
+}`, cs: `int[] NextGreater(int[] nums)
+{
+    var res = Enumerable.Repeat(-1, nums.Length).ToArray();
+    for (int i = 0; i < nums.Length; i++)
+    {
+        for (int j = i + 1; j < nums.Length; j++)     // O(n²)
+        {
+            if (nums[j] > nums[i]) { res[i] = nums[j]; break; }
+        }
+    }
+    return res;
+}` },
+        good: { py: `def next_greater(nums):
+    res = [-1] * len(nums)
+    stack = []                             # indexes waiting for an answer
+    for i, x in enumerate(nums):
+        while stack and nums[stack[-1]] < x:
+            res[stack.pop()] = x
+        stack.append(i)
+    # O(n): each index pushed and popped once
+    return res`, java: `int[] nextGreater(int[] nums) {
+    int[] res = new int[nums.length];
+    Arrays.fill(res, -1);
+    // indexes waiting for an answer
+    Deque<Integer> stack = new ArrayDeque<>();
+    for (int i = 0; i < nums.length; i++) {
+        while (!stack.isEmpty() && nums[stack.peek()] < nums[i])
+            res[stack.pop()] = nums[i];
+        stack.push(i);
+    }
+    return res;                            // O(n)
+}`, cs: `int[] NextGreater(int[] nums)
+{
+    var res = Enumerable.Repeat(-1, nums.Length).ToArray();
+    var stack = new Stack<int>();          // indexes waiting for an answer
+    for (int i = 0; i < nums.Length; i++)
+    {
+        while (stack.Count > 0 && nums[stack.Peek()] < nums[i])
+            res[stack.Pop()] = nums[i];
+        stack.Push(i);
+    }
+    return res;                            // O(n)
+}` } },
+    ],
     code: {
       py: `stack = []
 stack.append(1)        # push
@@ -320,6 +771,141 @@ static bool IsValid(string s) {
         java: "poll() and peek() return null on an empty queue; remove() and element() throw.",
         cs: "Dequeue() throws on an empty Queue<T>. Check Count first, or use TryDequeue." },
       "Mark nodes as seen when you enqueue them (not when you dequeue) to avoid duplicates in BFS."],
+    practice: [
+      { why: { py: "`list.pop(0)` shifts every remaining item, so a list-based queue is O(n) per dequeue. `deque.popleft()` is O(1).",
+          java: "`ArrayList.remove(0)` shifts every remaining item: O(n) per dequeue. `ArrayDeque` adds and removes at both ends in O(1).",
+          cs: "`List.RemoveAt(0)` shifts every remaining item: O(n) per dequeue. `Queue<T>` does it in O(1)." },
+        bad: { py: `queue = [start]
+while queue:
+    node = queue.pop(0)     # O(n): shifts everything
+    queue.extend(graph[node])`, java: `List<Integer> queue = new ArrayList<>(List.of(start));
+while (!queue.isEmpty()) {
+    int node = queue.remove(0);   // O(n): shifts everything
+    queue.addAll(graph.get(node));
+}`, cs: `var queue = new List<int> { start };
+while (queue.Count > 0)
+{
+    int node = queue[0];
+    queue.RemoveAt(0);            // O(n): shifts everything
+    queue.AddRange(graph[node]);
+}` },
+        good: { py: `from collections import deque
+
+queue = deque([start])
+while queue:
+    node = queue.popleft()  # O(1)
+    queue.extend(graph[node])`, java: `Deque<Integer> queue = new ArrayDeque<>(List.of(start));
+while (!queue.isEmpty()) {
+    int node = queue.poll();      // O(1)
+    queue.addAll(graph.get(node));
+}`, cs: `var queue = new Queue<int>();
+queue.Enqueue(start);
+while (queue.Count > 0)
+{
+    int node = queue.Dequeue();   // O(1)
+    foreach (int nb in graph[node]) queue.Enqueue(nb);
+}` } },
+      { why: "If nodes are marked when they're taken out, a node can be added many times before its turn comes. Mark it as seen when you add it.",
+        bad: { py: `queue, seen = deque([start]), set()
+while queue:
+    node = queue.popleft()
+    seen.add(node)              # marked late: queued many times
+    for nb in graph[node]:
+        if nb not in seen:
+            queue.append(nb)`, java: `Deque<Integer> queue = new ArrayDeque<>(List.of(start));
+Set<Integer> seen = new HashSet<>();
+while (!queue.isEmpty()) {
+    int node = queue.poll();
+    seen.add(node);             // marked late: queued many times
+    for (int nb : graph.get(node))
+        if (!seen.contains(nb)) queue.offer(nb);
+}`, cs: `var queue = new Queue<int>(new[] { start });
+var seen = new HashSet<int>();
+while (queue.Count > 0)
+{
+    int node = queue.Dequeue();
+    seen.Add(node);             // marked late: queued many times
+    foreach (int nb in graph[node])
+        if (!seen.Contains(nb)) queue.Enqueue(nb);
+}` },
+        good: { py: `queue, seen = deque([start]), {start}
+while queue:
+    node = queue.popleft()
+    for nb in graph[node]:
+        if nb not in seen:
+            seen.add(nb)        # marked when queued: once each
+            queue.append(nb)`, java: `Deque<Integer> queue = new ArrayDeque<>(List.of(start));
+Set<Integer> seen = new HashSet<>(List.of(start));
+while (!queue.isEmpty()) {
+    int node = queue.poll();
+    for (int nb : graph.get(node))
+        // marked when queued: once each
+        if (seen.add(nb)) queue.offer(nb);
+}`, cs: `var queue = new Queue<int>(new[] { start });
+var seen = new HashSet<int> { start };
+while (queue.Count > 0)
+{
+    int node = queue.Dequeue();
+    foreach (int nb in graph[node])
+        // marked when queued: once each
+        if (seen.Add(nb)) queue.Enqueue(nb);
+}` } },
+      { why: "Taking the max of every window is O(n·k). A deque of indexes whose values decrease keeps the current max at the front: O(n).",
+        bad: { py: `def window_max(nums, k):
+    return [max(nums[i:i + k]) for i in range(len(nums) - k + 1)]   # O(n·k)`, java: `List<Integer> windowMax(int[] nums, int k) {
+    List<Integer> res = new ArrayList<>();
+    for (int i = 0; i + k <= nums.length; i++) {
+        int best = nums[i];
+        // O(n·k)
+        for (int j = i; j < i + k; j++) best = Math.max(best, nums[j]);
+        res.add(best);
+    }
+    return res;
+}`, cs: `List<int> WindowMax(int[] nums, int k)
+{
+    var res = new List<int>();
+    for (int i = 0; i + k <= nums.Length; i++)
+        res.Add(nums.Skip(i).Take(k).Max());   // O(n·k)
+    return res;
+}` },
+        good: { py: `def window_max(nums, k):
+    dq, res = deque(), []        # indexes, values decreasing
+    for i, x in enumerate(nums):
+        while dq and nums[dq[-1]] <= x:
+            dq.pop()             # smaller values can never be the max
+        dq.append(i)
+        if dq[0] <= i - k:
+            dq.popleft()         # fell out of the window
+        if i >= k - 1:
+            res.append(nums[dq[0]])
+    return res`, java: `List<Integer> windowMax(int[] nums, int k) {
+    Deque<Integer> dq = new ArrayDeque<>();   // indexes, values decreasing
+    List<Integer> res = new ArrayList<>();
+    for (int i = 0; i < nums.length; i++) {
+        while (!dq.isEmpty() && nums[dq.peekLast()] <= nums[i])
+            dq.pollLast();
+        dq.offerLast(i);
+        // fell out of the window
+        if (dq.peekFirst() <= i - k) dq.pollFirst();
+        if (i >= k - 1) res.add(nums[dq.peekFirst()]);
+    }
+    return res;
+}`, cs: `List<int> WindowMax(int[] nums, int k)
+{
+    var dq = new LinkedList<int>();       // indexes, values decreasing
+    var res = new List<int>();
+    for (int i = 0; i < nums.Length; i++)
+    {
+        while (dq.Count > 0 && nums[dq.Last.Value] <= nums[i])
+            dq.RemoveLast();
+        dq.AddLast(i);
+        // fell out of the window
+        if (dq.First.Value <= i - k) dq.RemoveFirst();
+        if (i >= k - 1) res.Add(nums[dq.First.Value]);
+    }
+    return res;
+}` } },
+    ],
     code: {
       py: `from collections import deque
 
@@ -393,6 +979,112 @@ int first = dq.First.Value;     // 0`,
         java: "Never change a key object while it's in the map: its hashCode() changes and the entry is lost.",
         cs: "Never change a key object while it's in the dictionary: its hash changes and the entry is lost. Records make good keys." },
       "Don't modify a map while iterating over it."],
+    practice: [
+      { why: "Checking for the key and then reading or writing it does two or three lookups and more code. Use the one call made for counting.",
+        bad: { py: `counts = {}
+for w in words:
+    if w in counts:
+        counts[w] += 1
+    else:
+        counts[w] = 1`, java: `Map<String, Integer> counts = new HashMap<>();
+for (String w : words) {
+    if (counts.containsKey(w)) counts.put(w, counts.get(w) + 1);
+    else counts.put(w, 1);
+}`, cs: `var counts = new Dictionary<string, int>();
+foreach (string w in words)
+{
+    if (counts.ContainsKey(w)) counts[w] = counts[w] + 1;
+    else counts[w] = 1;
+}` },
+        good: { py: `from collections import Counter
+
+counts = Counter(words)`, java: `Map<String, Integer> counts = new HashMap<>();
+for (String w : words) {
+    counts.merge(w, 1, Integer::sum);   // add 1, or start at 1
+}`, cs: `var counts = new Dictionary<string, int>();
+foreach (string w in words)
+{
+    counts[w] = counts.GetValueOrDefault(w) + 1;
+}` } },
+      { why: "Checking every pair is O(n²). Remembering what you've seen in a hash map turns \"is the partner here?\" into an O(1) lookup: O(n) overall.",
+        bad: { py: `def two_sum(nums, target):
+    for i in range(len(nums)):
+        for j in range(i + 1, len(nums)):    # O(n²)
+            if nums[i] + nums[j] == target:
+                return [i, j]`, java: `int[] twoSum(int[] nums, int target) {
+    for (int i = 0; i < nums.length; i++)
+        for (int j = i + 1; j < nums.length; j++)   // O(n²)
+            if (nums[i] + nums[j] == target) return new int[] {i, j};
+    return new int[0];
+}`, cs: `int[] TwoSum(int[] nums, int target)
+{
+    for (int i = 0; i < nums.Length; i++)
+        for (int j = i + 1; j < nums.Length; j++)   // O(n²)
+            if (nums[i] + nums[j] == target) return new[] { i, j };
+    return new int[0];
+}` },
+        good: { py: `def two_sum(nums, target):
+    index_of = {}                            # value -> index
+    for i, x in enumerate(nums):
+        if target - x in index_of:           # O(1) lookup
+            return [index_of[target - x], i]
+        index_of[x] = i`, java: `int[] twoSum(int[] nums, int target) {
+    Map<Integer, Integer> indexOf = new HashMap<>();   // value -> index
+    for (int i = 0; i < nums.length; i++) {
+        Integer j = indexOf.get(target - nums[i]);     // O(1) lookup
+        if (j != null) return new int[] {j, i};
+        indexOf.put(nums[i], i);
+    }
+    return new int[0];
+}`, cs: `int[] TwoSum(int[] nums, int target)
+{
+    var indexOf = new Dictionary<int, int>();   // value -> index
+    for (int i = 0; i < nums.Length; i++)
+    {
+        if (indexOf.TryGetValue(target - nums[i], out int j))
+            return new[] { j, i };
+        indexOf[nums[i]] = i;
+    }
+    return new int[0];
+}` } },
+      { why: "Grouping by hand needs a \"create the list if missing\" check every time. Let the map create it for you.",
+        bad: { py: `groups = {}
+for w in words:
+    key = "".join(sorted(w))
+    if key not in groups:
+        groups[key] = []
+    groups[key].append(w)`, java: `Map<String, List<String>> groups = new HashMap<>();
+for (String w : words) {
+    char[] cs = w.toCharArray();
+    Arrays.sort(cs);
+    String key = new String(cs);
+    if (!groups.containsKey(key)) groups.put(key, new ArrayList<>());
+    groups.get(key).add(w);
+}`, cs: `var groups = new Dictionary<string, List<string>>();
+foreach (string w in words)
+{
+    string key = new string(w.OrderBy(c => c).ToArray());
+    if (!groups.ContainsKey(key)) groups[key] = new List<string>();
+    groups[key].Add(w);
+}` },
+        good: { py: `from collections import defaultdict
+
+groups = defaultdict(list)          # a missing key starts as []
+for w in words:
+    groups["".join(sorted(w))].append(w)`, java: `Map<String, List<String>> groups = new HashMap<>();
+for (String w : words) {
+    char[] cs = w.toCharArray();
+    Arrays.sort(cs);
+    groups.computeIfAbsent(new String(cs), k -> new ArrayList<>()).add(w);
+}`, cs: `var groups = new Dictionary<string, List<string>>();
+foreach (string w in words)
+{
+    string key = new string(w.OrderBy(c => c).ToArray());
+    if (!groups.TryGetValue(key, out var list))
+        groups[key] = list = new List<string>();
+    list.Add(w);
+}` } },
+    ],
     code: {
       py: `from collections import defaultdict, Counter
 
@@ -463,6 +1155,80 @@ foreach (char ch in "banana")
         cs: "list.Contains(x) is O(n) but set.Contains(x) is O(1). Convert once if you check many times." },
       { java: "add() returns false when the item already exists, which is a handy duplicate check.",
         cs: "Add() returns false when the item already exists, which is a handy duplicate check." }],
+    practice: [
+      { why: "Checking membership in a list scans it: O(n) per check, O(n²) in a loop. A set answers in O(1).",
+        bad: { py: `def has_duplicate(nums):
+    seen = []
+    for x in nums:
+        if x in seen:       # O(n) scan
+            return True
+        seen.append(x)
+    return False`, java: `boolean hasDuplicate(int[] nums) {
+    List<Integer> seen = new ArrayList<>();
+    for (int x : nums) {
+        if (seen.contains(x)) return true;   // O(n) scan
+        seen.add(x);
+    }
+    return false;
+}`, cs: `bool HasDuplicate(int[] nums)
+{
+    var seen = new List<int>();
+    foreach (int x in nums)
+    {
+        if (seen.Contains(x)) return true;   // O(n) scan
+        seen.Add(x);
+    }
+    return false;
+}` },
+        good: { py: `def has_duplicate(nums):
+    seen = set()
+    for x in nums:
+        if x in seen:       # O(1)
+            return True
+        seen.add(x)
+    return False`, java: `boolean hasDuplicate(int[] nums) {
+    Set<Integer> seen = new HashSet<>();
+    for (int x : nums) {
+        if (!seen.add(x)) return true;   // false for a repeat: O(1)
+    }
+    return false;
+}`, cs: `bool HasDuplicate(int[] nums)
+{
+    var seen = new HashSet<int>();
+    foreach (int x in nums)
+    {
+        if (!seen.Add(x)) return true;   // false for a repeat: O(1)
+    }
+    return false;
+}` } },
+      { why: "A plain hash set doesn't keep insertion order, so de-duplicating through one can shuffle the items. Use an order-keeping structure when order matters.",
+        bad: { py: `unique = list(set(names))          # order is lost`, java: `// order is lost
+List<String> unique = new ArrayList<>(new HashSet<>(names));`, cs: `// order isn't guaranteed
+var unique = new HashSet<string>(names).ToList();` },
+        good: { py: `unique = list(dict.fromkeys(names)) # first-seen order kept`, java: `// order kept
+List<String> unique = new ArrayList<>(new LinkedHashSet<>(names));`, cs: `var seen = new HashSet<string>();
+var unique = new List<string>();
+foreach (string n in names)
+    if (seen.Add(n)) unique.Add(n);   // first-seen order kept` } },
+      { why: "Comparing every item with every other is O(n·m). Sets have intersection built in, in about O(n + m).",
+        bad: { py: `common = []
+for x in a:
+    for y in b:                     # O(n·m)
+        if x == y and x not in common:
+            common.append(x)`, java: `List<Integer> common = new ArrayList<>();
+for (int x : a)
+    for (int y : b)                 // O(n·m)
+        if (x == y && !common.contains(x)) common.add(x);`, cs: `var common = new List<int>();
+foreach (int x in a)
+    foreach (int y in b)            // O(n·m)
+        if (x == y && !common.Contains(x)) common.Add(x);` },
+        good: { py: `common = set(a) & set(b)            # O(n + m)`, java: `Set<Integer> common = new HashSet<>();
+for (int x : a) common.add(x);
+Set<Integer> inB = new HashSet<>();
+for (int y : b) inB.add(y);
+common.retainAll(inB);              // O(n + m)`, cs: `var common = new HashSet<int>(a);
+common.IntersectWith(b);            // O(n + m)` } },
+    ],
     code: {
       py: `seen = set()
 seen.add(3)
@@ -515,6 +1281,118 @@ var diff = new HashSet<int>(a);  diff.ExceptWith(b);       // {1}`,
     ops: [["Visit every node (any traversal)", "O(n)"], ["Height / depth", "O(n)"], ["Search (unsorted tree)", "O(n)"], ["Recursion stack", "O(h): log n balanced, n skewed"]],
     builtin: { py: "None (write your own TreeNode)", java: "None (write your own TreeNode)", cs: "None (write your own TreeNode)" },
     pitfalls: [{ py: "Always handle the empty tree (root is None) first.", java: "Always handle the empty tree (root == null) first.", cs: "Always handle the empty tree (root is null) first." }, "Decide what each recursive call returns before writing it.", "Deep, skewed trees can overflow the recursion stack. Use an explicit stack if needed."],
+    practice: [
+      { why: "Let each call return its answer and combine the children's results. A shared variable updated from inside the recursion is harder to follow and to reuse.",
+        bad: { py: `best = 0
+
+def depth(node, d=1):
+    global best
+    if node:
+        best = max(best, d)         # shared state
+        depth(node.left, d + 1)
+        depth(node.right, d + 1)`, java: `int best = 0;
+
+void depth(TreeNode node, int d) {
+    if (node == null) return;
+    best = Math.max(best, d);       // shared state
+    depth(node.left, d + 1);
+    depth(node.right, d + 1);
+}`, cs: `int best = 0;
+
+void Depth(TreeNode node, int d)
+{
+    if (node == null) return;
+    best = Math.Max(best, d);       // shared state
+    Depth(node.left, d + 1);
+    Depth(node.right, d + 1);
+}` },
+        good: { py: `def depth(node):
+    if not node:
+        return 0
+    return 1 + max(depth(node.left), depth(node.right))`, java: `int depth(TreeNode node) {
+    if (node == null) return 0;
+    return 1 + Math.max(depth(node.left), depth(node.right));
+}`, cs: `int Depth(TreeNode node)
+{
+    if (node == null) return 0;
+    return 1 + Math.Max(Depth(node.left), Depth(node.right));
+}` } },
+      { why: "Calling `height()` at every node walks the same subtrees again and again: O(n²) on a skewed tree. Return the height and the answer from one pass: O(n).",
+        bad: { py: `def height(node):
+    return 0 if not node else 1 + max(height(node.left), height(node.right))
+
+def balanced(node):
+    if not node:
+        return True
+    # walks the subtree again
+    if abs(height(node.left) - height(node.right)) > 1:
+        return False
+    return balanced(node.left) and balanced(node.right)`, java: `int height(TreeNode n) {
+    return n == null ? 0 : 1 + Math.max(height(n.left), height(n.right));
+}
+
+boolean balanced(TreeNode n) {
+    if (n == null) return true;
+    // walks it again
+    if (Math.abs(height(n.left) - height(n.right)) > 1) return false;
+    return balanced(n.left) && balanced(n.right);
+}`, cs: `int Height(TreeNode n) =>
+    n == null ? 0 : 1 + Math.Max(Height(n.left), Height(n.right));
+
+bool Balanced(TreeNode n)
+{
+    if (n == null) return true;
+    // walks it again
+    if (Math.Abs(Height(n.left) - Height(n.right)) > 1) return false;
+    return Balanced(n.left) && Balanced(n.right);
+}` },
+        good: { py: `def balanced(root):
+    def check(node):                # height, or -1 if unbalanced
+        if not node:
+            return 0
+        left, right = check(node.left), check(node.right)
+        if left < 0 or right < 0 or abs(left - right) > 1:
+            return -1
+        return 1 + max(left, right)
+    return check(root) >= 0`, java: `int check(TreeNode n) {             // height, or -1 if unbalanced
+    if (n == null) return 0;
+    int left = check(n.left), right = check(n.right);
+    if (left < 0 || right < 0 || Math.abs(left - right) > 1) return -1;
+    return 1 + Math.max(left, right);
+}
+
+boolean balanced(TreeNode root) { return check(root) >= 0; }`, cs: `int Check(TreeNode n)               // height, or -1 if unbalanced
+{
+    if (n == null) return 0;
+    int left = Check(n.left), right = Check(n.right);
+    if (left < 0 || right < 0 || Math.Abs(left - right) > 1) return -1;
+    return 1 + Math.Max(left, right);
+}
+
+bool Balanced(TreeNode root) => Check(root) >= 0;` } },
+      { why: "Two different trees can give the same traversal: [1, 2] is the inorder of 2 with a left child 1, and of 1 with a right child 2. Compare the structure node by node.",
+        bad: { py: `def same_tree(a, b):
+    return inorder(a) == inorder(b)     # different shapes can match`, java: `boolean sameTree(TreeNode a, TreeNode b) {
+    return inorder(a).equals(inorder(b));   // different shapes can match
+}`, cs: `bool SameTree(TreeNode a, TreeNode b) =>
+    Inorder(a).SequenceEqual(Inorder(b));   // different shapes can match` },
+        good: { py: `def same_tree(a, b):
+    if not a or not b:
+        return a is b                   # both empty, or not the same
+    return (a.val == b.val and same_tree(a.left, b.left)
+            and same_tree(a.right, b.right))`, java: `boolean sameTree(TreeNode a, TreeNode b) {
+    // both empty, or not the same
+    if (a == null || b == null) return a == b;
+    return a.val == b.val
+        && sameTree(a.left, b.left) && sameTree(a.right, b.right);
+}`, cs: `bool SameTree(TreeNode a, TreeNode b)
+{
+    // both empty, or not the same
+    if (a == null || b == null) return a == b;
+    return a.val == b.val
+        && SameTree(a.left, b.left) && SameTree(a.right, b.right);
+}` } },
+    ],
     code: {
       py: `from collections import deque
 
@@ -633,6 +1511,127 @@ static List<List<int>> LevelOrder(TreeNode root) {
     ops: [["Search / insert / delete (balanced)", "O(log n)"], ["Same, unbalanced worst case", "O(n)"], ["Min / max", "O(log n)"], ["Sorted iteration (inorder)", "O(n)"]],
     builtin: { py: "None built-in (bisect on a sorted list, or sortedcontainers)", java: "TreeMap<K, V>, TreeSet<T>", cs: "SortedDictionary<K, V>, SortedSet<T>" },
     pitfalls: ["Validating a BST needs a (low, high) range, not just comparing a node to its children.", "Inserting already-sorted data into a plain BST makes it a linked list.", "Decide how to handle duplicates (left, right, or a count)."],
+    practice: [
+      { why: "Every node must fit the range set by all its ancestors, not just its parent. In 5 → (left 4 → right 6), 6 is bigger than 4 but sits left of 5. Pass the allowed range down.",
+        bad: { py: `def valid(node):
+    if not node:
+        return True
+    if node.left and node.left.val >= node.val:
+        return False
+    if node.right and node.right.val <= node.val:
+        return False
+    return valid(node.left) and valid(node.right)   # misses deeper nodes`, java: `boolean valid(TreeNode n) {
+    if (n == null) return true;
+    if (n.left != null && n.left.val >= n.val) return false;
+    if (n.right != null && n.right.val <= n.val) return false;
+    return valid(n.left) && valid(n.right);   // misses deeper nodes
+}`, cs: `bool Valid(TreeNode n)
+{
+    if (n == null) return true;
+    if (n.left != null && n.left.val >= n.val) return false;
+    if (n.right != null && n.right.val <= n.val) return false;
+    return Valid(n.left) && Valid(n.right);   // misses deeper nodes
+}` },
+        good: { py: `def valid(node, low=float("-inf"), high=float("inf")):
+    if not node:
+        return True
+    if not low < node.val < high:
+        return False
+    return (valid(node.left, low, node.val)
+            and valid(node.right, node.val, high))`, java: `// start with Long.MIN_VALUE, MAX_VALUE
+boolean valid(TreeNode n, long low, long high) {
+    if (n == null) return true;
+    if (n.val <= low || n.val >= high) return false;
+    return valid(n.left, low, n.val) && valid(n.right, n.val, high);
+}`, cs: `bool Valid(TreeNode n, long low = long.MinValue, long high = long.MaxValue)
+{
+    if (n == null) return true;
+    if (n.val <= low || n.val >= high) return false;
+    return Valid(n.left, low, n.val) && Valid(n.right, n.val, high);
+}` } },
+      { why: "Searching both sides ignores the ordering and visits every node: O(n). The ordering tells you which side to go: O(height).",
+        bad: { py: `def contains(node, target):
+    if not node:
+        return False
+    return (node.val == target or contains(node.left, target)
+            or contains(node.right, target))       # visits everything`, java: `boolean contains(TreeNode n, int target) {
+    if (n == null) return false;
+    // visits everything
+    return n.val == target
+        || contains(n.left, target) || contains(n.right, target);
+}`, cs: `bool Contains(TreeNode n, int target)
+{
+    if (n == null) return false;
+    // visits everything
+    return n.val == target
+        || Contains(n.left, target) || Contains(n.right, target);
+}` },
+        good: { py: `def contains(node, target):
+    while node:
+        if target == node.val:
+            return True
+        # one side only
+        node = node.left if target < node.val else node.right
+    return False`, java: `boolean contains(TreeNode n, int target) {
+    while (n != null) {
+        if (target == n.val) return true;
+        n = target < n.val ? n.left : n.right;   // one side only
+    }
+    return false;
+}`, cs: `bool Contains(TreeNode n, int target)
+{
+    while (n != null)
+    {
+        if (target == n.val) return true;
+        n = target < n.val ? n.left : n.right;   // one side only
+    }
+    return false;
+}` } },
+      { why: "Listing the whole tree to read one item costs O(n) time and space. An inorder walk visits values in sorted order, so stop at the k-th.",
+        bad: { py: `def kth_smallest(root, k):
+    vals = inorder(root)            # the whole tree, O(n) space
+    return vals[k - 1]`, java: `int kthSmallest(TreeNode root, int k) {
+    List<Integer> vals = inorder(root);   // the whole tree, O(n) space
+    return vals.get(k - 1);
+}`, cs: `int KthSmallest(TreeNode root, int k)
+{
+    List<int> vals = Inorder(root);       // the whole tree, O(n) space
+    return vals[k - 1];
+}` },
+        good: { py: `def kth_smallest(root, k):
+    stack, node = [], root
+    while True:
+        while node:                 # go as far left as possible
+            stack.append(node)
+            node = node.left
+        node = stack.pop()
+        k -= 1
+        if k == 0:
+            return node.val         # stop here
+        node = node.right`, java: `int kthSmallest(TreeNode root, int k) {
+    Deque<TreeNode> stack = new ArrayDeque<>();
+    TreeNode node = root;
+    while (true) {
+        // go far left
+        for (; node != null; node = node.left) stack.push(node);
+        node = stack.pop();
+        if (--k == 0) return node.val;    // stop here
+        node = node.right;
+    }
+}`, cs: `int KthSmallest(TreeNode root, int k)
+{
+    var stack = new Stack<TreeNode>();
+    var node = root;
+    while (true)
+    {
+        // go far left
+        for (; node != null; node = node.left) stack.Push(node);
+        node = stack.Pop();
+        if (--k == 0) return node.val;    // stop here
+        node = node.right;
+    }
+}` } },
+    ],
     code: {
       py: `import bisect
 
@@ -723,6 +1722,84 @@ int floor = between.Max;                         // 5 = largest in [3, 6]`,
       { py: "For ties in tuples, add a counter, (priority, count, item), so non-comparable items are never compared.",
         java: "Iterating a PriorityQueue doesn't give sorted order: only poll() returns items smallest first.",
         cs: "Enumerating UnorderedItems doesn't give sorted order: only Dequeue() returns items smallest first." }],
+    practice: [
+      { why: "Sorting everything to keep k items is O(n log n). A min-heap that never holds more than k items does it in O(n log k).",
+        bad: { py: `top = sorted(nums, reverse=True)[:k]     # sorts all n`, java: `int[] sorted = nums.clone();
+Arrays.sort(sorted);                         // sorts all n
+int[] top = Arrays.copyOfRange(sorted, sorted.length - k, sorted.length);`, cs: `var top = nums.OrderByDescending(x => x).Take(k).ToList();   // sorts all n` },
+        good: { py: `import heapq
+
+top = heapq.nlargest(k, nums)            # a heap of size k: O(n log k)`, java: `PriorityQueue<Integer> heap = new PriorityQueue<>();   // min-heap
+for (int x : nums) {
+    heap.offer(x);
+    // drop the smallest: k items left
+    if (heap.size() > k) heap.poll();
+}`, cs: `var heap = new PriorityQueue<int, int>();   // min-heap
+foreach (int x in nums)
+{
+    heap.Enqueue(x, x);
+    // drop the smallest: k items left
+    if (heap.Count > k) heap.Dequeue();
+}` } },
+      { why: "Finding and removing the minimum from a list is O(n) each time, so repeating it is O(n²). A heap gives the minimum in O(log n).",
+        bad: { py: `cost = 0
+while len(sticks) > 1:
+    a = min(sticks); sticks.remove(a)    # O(n) each
+    b = min(sticks); sticks.remove(b)
+    cost += a + b
+    sticks.append(a + b)`, java: `int cost = 0;
+while (sticks.size() > 1) {
+    Integer a = Collections.min(sticks); sticks.remove(a);   // O(n) each
+    Integer b = Collections.min(sticks); sticks.remove(b);
+    cost += a + b;
+    sticks.add(a + b);
+}`, cs: `int cost = 0;
+while (sticks.Count > 1)
+{
+    int a = sticks.Min(); sticks.Remove(a);   // O(n) each
+    int b = sticks.Min(); sticks.Remove(b);
+    cost += a + b;
+    sticks.Add(a + b);
+}` },
+        good: { py: `import heapq
+
+heapq.heapify(sticks)                    # O(n), once
+cost = 0
+while len(sticks) > 1:
+    a, b = heapq.heappop(sticks), heapq.heappop(sticks)   # O(log n)
+    cost += a + b
+    heapq.heappush(sticks, a + b)`, java: `PriorityQueue<Integer> heap = new PriorityQueue<>(sticks);
+int cost = 0;
+while (heap.size() > 1) {
+    int a = heap.poll(), b = heap.poll();    // O(log n)
+    cost += a + b;
+    heap.offer(a + b);
+}`, cs: `var heap = new PriorityQueue<int, int>(sticks.Select(s => (s, s)));
+int cost = 0;
+while (heap.Count > 1)
+{
+    int a = heap.Dequeue(), b = heap.Dequeue();   // O(log n)
+    cost += a + b;
+    heap.Enqueue(a + b, a + b);
+}` } },
+      { why: { py: "When two priorities tie, Python compares the next tuple item, and two objects without an order raise `TypeError`. A counter in the middle breaks ties first.",
+          java: "`b - a` overflows for big values (say 2,000,000,000 and -2,000,000,000), and the heap orders them wrongly. Use a comparator that can't overflow.",
+          cs: "`b - a` overflows for big values (say 2,000,000,000 and -2,000,000,000), and the heap orders them wrongly. Use a comparison that can't overflow." },
+        bad: { py: `heap = []
+# a tie compares two nodes: TypeError
+heapq.heappush(heap, (dist, node))`, java: `// can overflow
+PriorityQueue<Integer> maxHeap = new PriorityQueue<>((a, b) -> b - a);`, cs: `// can overflow
+var maxHeap = new PriorityQueue<int, int>(
+    Comparer<int>.Create((a, b) => b - a));` },
+        good: { py: `from itertools import count
+
+order = count()                          # 0, 1, 2, ...
+heap = []
+# ties settle on the counter
+heapq.heappush(heap, (dist, next(order), node))`, java: `PriorityQueue<Integer> maxHeap =
+    new PriorityQueue<>(Comparator.reverseOrder());`, cs: `var maxHeap = new PriorityQueue<int, int>(
+    Comparer<int>.Create((a, b) => b.CompareTo(a)));` } },
+    ],
     code: {
       py: `import heapq
 
@@ -785,6 +1862,125 @@ int largest = maxHeap.Peek();                    // 8`,
     ops: [["Insert word of length L", "O(L)"], ["Search word", "O(L)"], ["Starts-with (prefix)", "O(L)"], ["Space", "O(total characters)"]],
     builtin: { py: "None (nested dicts or a TrieNode class)", java: "None (Node with children array or map)", cs: "None (Node with Dictionary children)" },
     pitfalls: ["Mark the end of a word explicitly: 'app' isn't stored just because 'apple' is.", "A 26-slot array is fast but assumes lowercase a-z; use a map otherwise.", "Prune nodes in Word Search II after finding a word to avoid repeats."],
+    practice: [
+      { why: "Checking a prefix against every word is O(n·L) per query. A trie walks only the prefix's characters: O(L), however many words there are.",
+        bad: { py: `def starts_with(words, prefix):
+    # every word, every query
+    return any(w.startswith(prefix) for w in words)`, java: `boolean startsWith(List<String> words, String prefix) {
+    for (String w : words)                 // every word, every query
+        if (w.startsWith(prefix)) return true;
+    return false;
+}`, cs: `bool StartsWith(List<string> words, string prefix) =>
+    // every word
+    words.Any(w => w.StartsWith(prefix, StringComparison.Ordinal));` },
+        good: { py: `def starts_with(root, prefix):
+    node = root
+    for c in prefix:
+        if c not in node.children:
+            return False
+        node = node.children[c]
+    return True                            # O(len(prefix))`, java: `boolean startsWith(Node root, String prefix) {
+    Node node = root;
+    for (char c : prefix.toCharArray()) {
+        node = node.next[c - 'a'];
+        if (node == null) return false;
+    }
+    return true;                           // O(prefix length)
+}`, cs: `bool StartsWith(Node root, string prefix)
+{
+    var node = root;
+    foreach (char c in prefix)
+        if (!node.Next.TryGetValue(c, out node)) return false;
+    return true;                           // O(prefix length)
+}` } },
+      { why: "A path in the trie only means some word starts that way. Without checking the end-of-word flag, \"app\" is found just because \"apple\" was added.",
+        bad: { py: `def search(root, word):
+    node = root
+    for c in word:
+        if c not in node.children:
+            return False
+        node = node.children[c]
+    # "app" found after inserting "apple"
+    return True`, java: `boolean search(Node root, String word) {
+    Node node = root;
+    for (char c : word.toCharArray()) {
+        node = node.next[c - 'a'];
+        if (node == null) return false;
+    }
+    // "app" found after inserting "apple"
+    return true;
+}`, cs: `bool Search(Node root, string word)
+{
+    var node = root;
+    foreach (char c in word)
+        if (!node.Next.TryGetValue(c, out node)) return false;
+    // "app" found after inserting "apple"
+    return true;
+}` },
+        good: { py: `def search(root, word):
+    node = root
+    for c in word:
+        if c not in node.children:
+            return False
+        node = node.children[c]
+    return node.is_word                    # a whole word ends here`, java: `boolean search(Node root, String word) {
+    Node node = root;
+    for (char c : word.toCharArray()) {
+        node = node.next[c - 'a'];
+        if (node == null) return false;
+    }
+    return node.isWord;                    // a whole word ends here
+}`, cs: `bool Search(Node root, string word)
+{
+    var node = root;
+    foreach (char c in word)
+        if (!node.Next.TryGetValue(c, out node)) return false;
+    return node.IsWord;                    // a whole word ends here
+}` } },
+      { why: "Storing every prefix as its own string copies the same letters over and over: O(L²) per word. A trie stores shared prefixes once.",
+        bad: { py: `prefixes = set()
+for w in words:
+    for i in range(1, len(w) + 1):
+        # every prefix copied: O(L²) per word
+        prefixes.add(w[:i])`, java: `Set<String> prefixes = new HashSet<>();
+for (String w : words)
+    for (int i = 1; i <= w.length(); i++)
+        // every prefix copied: O(L²) per word
+        prefixes.add(w.substring(0, i));`, cs: `var prefixes = new HashSet<string>();
+foreach (string w in words)
+    for (int i = 1; i <= w.Length; i++)
+        // every prefix copied: O(L²) per word
+        prefixes.Add(w[..i]);` },
+        good: { py: `root = TrieNode()
+for w in words:
+    node = root
+    for c in w:
+        if c not in node.children:
+            node.children[c] = TrieNode()  # shared prefixes stored once
+        node = node.children[c]
+    node.is_word = True`, java: `Node root = new Node();
+for (String w : words) {
+    Node node = root;
+    for (char c : w.toCharArray()) {
+        // stored once
+        if (node.next[c - 'a'] == null) node.next[c - 'a'] = new Node();
+        node = node.next[c - 'a'];
+    }
+    node.isWord = true;
+}`, cs: `var root = new Node();
+foreach (string w in words)
+{
+    var node = root;
+    foreach (char c in w)
+    {
+        if (!node.Next.TryGetValue(c, out var child))
+            // shared prefixes stored once
+            node.Next[c] = child = new Node();
+        node = child;
+    }
+    node.IsWord = true;
+}` } },
+    ],
     code: {
       py: `class TrieNode:
     def __init__(self):
@@ -888,6 +2084,96 @@ public class Trie {
     ops: [["Build adjacency list", "O(V + E)"], ["BFS / DFS traversal", "O(V + E)"], ["Check edge u-v (adjacency list)", "O(deg(u))"], ["Dijkstra with a heap", "O((V + E) log V)"], ["Space", "O(V + E)"]],
     builtin: { py: "None (dict of lists / defaultdict(list))", java: "None (List<List<Integer>> or Map)", cs: "None (List<int>[] or Dictionary)" },
     pitfalls: ["Forgetting a visited set causes infinite loops on cycles.", "Undirected graphs need both directions added.", "Graphs can be disconnected: loop over every node as a possible start."],
+    practice: [
+      { why: "An n × n matrix uses O(n²) memory even when there are few edges: 100,000 nodes would need 10 billion cells. An adjacency list uses O(n + edges).",
+        bad: { py: `matrix = [[0] * n for _ in range(n)]     # O(n²) memory
+for a, b in edges:
+    matrix[a][b] = matrix[b][a] = 1`, java: `boolean[][] matrix = new boolean[n][n];  // O(n²) memory
+for (int[] e : edges) {
+    matrix[e[0]][e[1]] = true;
+    matrix[e[1]][e[0]] = true;
+}`, cs: `var matrix = new bool[n, n];             // O(n²) memory
+foreach (var e in edges)
+{
+    matrix[e[0], e[1]] = true;
+    matrix[e[1], e[0]] = true;
+}` },
+        good: { py: `from collections import defaultdict
+
+graph = defaultdict(list)                # O(n + edges)
+for a, b in edges:
+    graph[a].append(b)
+    graph[b].append(a)                   # undirected: both ways`, java: `List<List<Integer>> graph = new ArrayList<>();   // O(n + edges)
+for (int i = 0; i < n; i++) graph.add(new ArrayList<>());
+for (int[] e : edges) {
+    graph.get(e[0]).add(e[1]);
+    graph.get(e[1]).add(e[0]);           // undirected: both ways
+}`, cs: `var graph = new List<int>[n];            // O(n + edges)
+for (int i = 0; i < n; i++) graph[i] = new List<int>();
+foreach (var e in edges)
+{
+    graph[e[0]].Add(e[1]);
+    graph[e[1]].Add(e[0]);               // undirected: both ways
+}` } },
+      { why: "Without a visited set, a cycle (or simply an undirected edge, which goes both ways) sends the search around forever.",
+        bad: { py: `def dfs(node):
+    for nb in graph[node]:
+        dfs(nb)                          # A -> B -> A -> B ... forever`, java: `void dfs(int node) {
+    for (int nb : graph.get(node))
+        dfs(nb);                         // A -> B -> A -> B ... forever
+}`, cs: `void Dfs(int node)
+{
+    foreach (int nb in graph[node])
+        Dfs(nb);                         // A -> B -> A -> B ... forever
+}` },
+        good: { py: `seen = set()
+
+def dfs(node):
+    seen.add(node)
+    for nb in graph[node]:
+        if nb not in seen:               # each node once
+            dfs(nb)`, java: `Set<Integer> seen = new HashSet<>();
+
+void dfs(int node) {
+    seen.add(node);
+    for (int nb : graph.get(node))
+        if (!seen.contains(nb)) dfs(nb); // each node once
+}`, cs: `HashSet<int> seen = new();
+
+void Dfs(int node)
+{
+    seen.Add(node);
+    foreach (int nb in graph[node])
+        if (!seen.Contains(nb)) Dfs(nb); // each node once
+}` } },
+      { why: "A graph can be in several pieces. Searching from one node only reaches its own piece, so try every node as a start.",
+        bad: { py: `dfs(0)
+# nodes not reachable from 0 are missed
+components = 1`, java: `dfs(0);
+// nodes not reachable from 0 are missed
+int components = 1;`, cs: `Dfs(0);
+// nodes not reachable from 0 are missed
+int components = 1;` },
+        good: { py: `components = 0
+for node in range(n):
+    if node not in seen:                 # a new, unvisited piece
+        dfs(node)
+        components += 1`, java: `int components = 0;
+for (int node = 0; node < n; node++) {
+    if (!seen.contains(node)) {          // a new, unvisited piece
+        dfs(node);
+        components++;
+    }
+}`, cs: `int components = 0;
+for (int node = 0; node < n; node++)
+{
+    if (!seen.Contains(node))            // a new, unvisited piece
+    {
+        Dfs(node);
+        components++;
+    }
+}` } },
+    ],
     code: {
       py: `from collections import defaultdict, deque
 
@@ -978,6 +2264,152 @@ while (q.Count > 0) {
     ops: [["find", "~O(1) amortized"], ["union", "~O(1) amortized"], ["Build for n items", "O(n)"], ["Space", "O(n)"]],
     builtin: { py: "None (two small arrays)", java: "None", cs: "None" },
     pitfalls: ["Union the roots, not the original nodes.", "Without path compression and union by size, it can degrade to O(n) per find.", "Map non-integer items (strings, coordinates) to ids first."],
+    practice: [
+      { why: "Joining the nodes themselves leaves their old groups behind. Always join the two roots.",
+        bad: { py: `def union(a, b):
+    parent[a] = b                        # a's old group is left behind`, java: `void union(int a, int b) {
+    parent[a] = b;                       // a's old group is left behind
+}`, cs: `void Union(int a, int b)
+{
+    parent[a] = b;                       // a's old group is left behind
+}` },
+        good: { py: `def union(a, b):
+    ra, rb = find(a), find(b)
+    if ra != rb:
+        parent[ra] = rb                  # join the roots`, java: `void union(int a, int b) {
+    int ra = find(a), rb = find(b);
+    if (ra != rb) parent[ra] = rb;       // join the roots
+}`, cs: `void Union(int a, int b)
+{
+    int ra = Find(a), rb = Find(b);
+    if (ra != rb) parent[ra] = rb;       // join the roots
+}` } },
+      { why: "Without path compression (and union by size), chains grow long and each find is O(n). With them, finds are close to O(1).",
+        bad: { py: `def find(x):
+    while parent[x] != x:
+        x = parent[x]                    # walks the whole chain every time
+    return x`, java: `int find(int x) {
+    // walks the whole chain every time
+    while (parent[x] != x) x = parent[x];
+    return x;
+}`, cs: `int Find(int x)
+{
+    // walks the whole chain every time
+    while (parent[x] != x) x = parent[x];
+    return x;
+}` },
+        good: { py: `def find(x):
+    while parent[x] != x:
+        # point to the grandparent: paths shrink
+        parent[x] = parent[parent[x]]
+        x = parent[x]
+    return x
+
+def union(a, b):
+    ra, rb = find(a), find(b)
+    if ra == rb:
+        return
+    if size[ra] < size[rb]:
+        ra, rb = rb, ra
+    parent[rb] = ra                      # small tree under big tree
+    size[ra] += size[rb]`, java: `int find(int x) {
+    while (parent[x] != x) {
+        // point to the grandparent: paths shrink
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+    }
+    return x;
+}
+
+void union(int a, int b) {
+    int ra = find(a), rb = find(b);
+    if (ra == rb) return;
+    if (size[ra] < size[rb]) { int t = ra; ra = rb; rb = t; }
+    parent[rb] = ra;                     // small tree under big tree
+    size[ra] += size[rb];
+}`, cs: `int Find(int x)
+{
+    while (parent[x] != x)
+    {
+        // point to the grandparent: paths shrink
+        parent[x] = parent[parent[x]];
+        x = parent[x];
+    }
+    return x;
+}
+
+void Union(int a, int b)
+{
+    int ra = Find(a), rb = Find(b);
+    if (ra == rb) return;
+    if (size[ra] < size[rb]) (ra, rb) = (rb, ra);
+    parent[rb] = ra;                     // small tree under big tree
+    size[ra] += size[rb];
+}` } },
+      { why: "Running a fresh search for every new edge is O(edges × (nodes + edges)). Union-Find answers \"already connected?\" in near O(1) as edges arrive.",
+        bad: { py: `def redundant_edge(edges):
+    graph = defaultdict(list)
+    for a, b in edges:
+        if connected(graph, a, b):       # a full search per edge
+            return [a, b]
+        graph[a].append(b)
+        graph[b].append(a)`, java: `int[] redundantEdge(int[][] edges) {
+    Map<Integer, List<Integer>> graph = new HashMap<>();
+    for (int[] e : edges) {
+        // a full search per edge
+        if (connected(graph, e[0], e[1])) return e;
+        graph.computeIfAbsent(e[0], k -> new ArrayList<>()).add(e[1]);
+        graph.computeIfAbsent(e[1], k -> new ArrayList<>()).add(e[0]);
+    }
+    return null;
+}`, cs: `int[] RedundantEdge(int[][] edges)
+{
+    var graph = new Dictionary<int, List<int>>();
+    foreach (var e in edges)
+    {
+        // a full search per edge
+        if (Connected(graph, e[0], e[1])) return e;
+        AddEdge(graph, e[0], e[1]);
+    }
+    return null;
+}` },
+        good: { py: `def redundant_edge(edges):
+    parent = list(range(len(edges) + 1))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    for a, b in edges:
+        ra, rb = find(a), find(b)
+        if ra == rb:
+            # already connected: this edge closes a cycle
+            return [a, b]
+        parent[ra] = rb`, java: `int[] redundantEdge(int[][] edges) {
+    parent = new int[edges.length + 1];
+    for (int i = 0; i < parent.length; i++) parent[i] = i;
+    for (int[] e : edges) {
+        int ra = find(e[0]), rb = find(e[1]);
+        // already connected: closes a cycle
+        if (ra == rb) return e;
+        parent[ra] = rb;
+    }
+    return null;
+}`, cs: `int[] RedundantEdge(int[][] edges)
+{
+    parent = Enumerable.Range(0, edges.Length + 1).ToArray();
+    foreach (var e in edges)
+    {
+        int ra = Find(e[0]), rb = Find(e[1]);
+        // already connected: closes a cycle
+        if (ra == rb) return e;
+        parent[ra] = rb;
+    }
+    return null;
+}` } },
+    ],
     code: {
       py: `class UnionFind:
     def __init__(self, n):

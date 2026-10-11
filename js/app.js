@@ -617,6 +617,7 @@ function refDS(id) {
       <pre class="language-${lang}">${esc(d.code[lang])}</pre>
       <div class="row">${lang === "py" ? `<button class="btn small primary" data-dsrun="${d.id}">Run in the scratchpad</button>` : `<span class="muted">${snippetNote(lang)}</span>`}
         <button class="btn small" data-dscopy="${d.id}">Copy</button></div></div>
+    ${prPractice(d.practice, lang)}
     ${dsVideos(d.id, d.name.replace(/\s*\(.*\)$/, "") + " data structure")}
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("ds:" + id)}</div>${learnNav("ds:" + id)}`;
 }

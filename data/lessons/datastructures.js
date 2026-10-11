@@ -33,11 +33,19 @@ const DS_OVERVIEW = {
 const DS = [
   {
     id: "array", name: "Array & dynamic array", short: "Ar",
-    what: "A contiguous block of memory holding elements of one type. Index arithmetic makes access O(1). A dynamic array (Python list, Java ArrayList, C# List) grows by allocating a bigger block and copying, which is why append is O(1) amortized.",
+    what: {
+      py: "A contiguous block of memory holding elements of one type. Index arithmetic makes access O(1). Python's list is a dynamic array: it grows by allocating a bigger block and copying, which is why append is O(1) amortized.",
+      java: "A contiguous block of memory holding elements of one type. Index arithmetic makes access O(1). An int[] has a fixed size; ArrayList is a dynamic array that grows by allocating a bigger block and copying, which is why add is O(1) amortized.",
+      cs: "A contiguous block of memory holding elements of one type. Index arithmetic makes access O(1). An int[] has a fixed size; List<T> is a dynamic array that grows by allocating a bigger block and copying, which is why Add is O(1) amortized.",
+    },
     when: ["You need fast access by index", "Data is naturally ordered by position (scores, pixels, grid cells)", "Building blocks for two pointers, sliding window, prefix sums"],
     ops: [["Read / write by index", "O(1)"], ["Append at end", "O(1) amortized"], ["Insert / delete in the middle", "O(n)"], ["Search unsorted", "O(n)"], ["Search sorted (binary search)", "O(log n)"], ["Sort", "O(n log n)"]],
     builtin: { py: "list", java: "int[], ArrayList<T>", cs: "T[], List<T>" },
-    pitfalls: ["Inserting or removing at the front is O(n): every element shifts.", "In Python, [[0] * c] * r creates rows that share one list. Use a comprehension.", "Off-by-one errors at the boundaries: test empty and single-element arrays."],
+    pitfalls: ["Inserting or removing at the front is O(n): every element shifts.",
+      { py: "[[0] * c] * r creates rows that share one list. Use a comprehension: [[0] * c for _ in range(r)].",
+        java: "Arrays.fill(grid, row) puts the same row object in every slot. new int[r][c] creates independent rows.",
+        cs: "A jagged array new int[r][] starts with every row null: create each row in a loop, or use int[r, c]." },
+      "Off-by-one errors at the boundaries: test empty and single-element arrays."],
     code: {
       py: `nums = [3, 1, 4]          # dynamic array (list)
 nums.append(1)            # O(1) amortized
@@ -84,11 +92,21 @@ grid[0, 1] = 5;`,
   },
   {
     id: "string", name: "String", short: "Str",
-    what: "A sequence of characters. In Python, Java and C# strings are immutable: every 'change' builds a new string. Many interview problems are really array problems on characters.",
+    what: {
+      py: "A sequence of characters. Python strings are immutable: every 'change' builds a new string. Many interview problems are really array problems on characters.",
+      java: "A sequence of characters. Java Strings are immutable: every 'change' builds a new String. Many interview problems are really array problems on characters (toCharArray()).",
+      cs: "A sequence of characters. C# strings are immutable: every 'change' builds a new string. Many interview problems are really array problems on characters (ToCharArray()).",
+    },
     when: ["Parsing and text processing", "Anagram / palindrome / substring problems", "Character counting with a fixed 26-slot array"],
     ops: [["Read character by index", "O(1)"], ["Length", "O(1)"], ["Concatenate", "O(n + m)"], ["Substring / slice", "O(k)"], ["Find substring (naive)", "O(n * m)"], ["Build with a builder / join", "O(total length)"]],
     builtin: { py: "str (+ list for building)", java: "String, StringBuilder", cs: "string, StringBuilder" },
-    pitfalls: ["s += c inside a loop can be O(n²). Use a list + join or a StringBuilder.", "In Java, compare content with .equals(), never ==.", "C# Substring takes (start, length); Java substring takes (start, end)."],
+    pitfalls: [
+      { py: "s += c inside a loop can be O(n²). Collect pieces in a list and ''.join() them once.",
+        java: "s += c inside a loop can be O(n²). Use a StringBuilder.",
+        cs: "s += c inside a loop can be O(n²). Use a StringBuilder." },
+      { py: "Slices s[a:b] stop before b, and negative indexes count from the end (s[-1] is the last character).",
+        java: "Compare contents with .equals(), never ==. substring(start, end) stops before end.",
+        cs: "Substring(start, length) takes a length, not an end index." }],
     code: {
       py: `s = "hello"
 print(s[0], s[-1], s[1:4])     # h o ell
@@ -143,7 +161,10 @@ bool same = s == "hello";                        // == compares content in C#`,
     when: ["Interview problems that give you a ListNode", "O(1) insert/remove at a known position (LRU cache)", "Merging or reordering sequences without copying"],
     ops: [["Access k-th element", "O(k)"], ["Insert / delete at head", "O(1)"], ["Insert / delete after a known node", "O(1)"], ["Search", "O(n)"], ["Find middle / detect cycle (fast & slow)", "O(n), O(1) space"]],
     builtin: { py: "None built-in (use your own ListNode; deque for O(1) ends)", java: "LinkedList<T> (doubly linked)", cs: "LinkedList<T> (doubly linked)" },
-    pitfalls: ["Lose the rest of the list by overwriting .next before saving it.", "Use a dummy head node to avoid special cases at the front.", "Always check node and node.next for null before following them."],
+    pitfalls: ["Lose the rest of the list by overwriting .next before saving it.", "Use a dummy head node to avoid special cases at the front.",
+      { py: "Always check node and node.next for None before following them.",
+        java: "Always check node and node.next for null before following them.",
+        cs: "Always check node and node.next for null before following them." }],
     code: {
       py: `class ListNode:
     def __init__(self, val=0, next=None):
@@ -218,7 +239,12 @@ var reversed = Reverse(head);         // 3 -> 2 -> 1`,
     when: ["Matching brackets, undo, backtracking state", "'Next greater / smaller element' (monotonic stack)", "Turning recursion into iteration (iterative DFS)"],
     ops: [["Push", "O(1)"], ["Pop", "O(1)"], ["Peek top", "O(1)"], ["Search", "O(n)"]],
     builtin: { py: "list (append / pop / [-1])", java: "ArrayDeque<T> (push / pop / peek)", cs: "Stack<T>" },
-    pitfalls: ["Popping or peeking an empty stack throws (or returns None). Check first.", "In Java prefer ArrayDeque over the legacy synchronized Stack class.", "Java: compare boxed Characters/Integers with .equals(), not ==."],
+    pitfalls: [
+      { py: "Popping or peeking an empty list raises IndexError. Check that the stack is non-empty first.",
+        java: "pop() and peek() on an empty ArrayDeque throw or return null. Check isEmpty() first.",
+        cs: "Pop() and Peek() on an empty Stack<T> throw InvalidOperationException. Check Count first, or use TryPop." },
+      { java: "Prefer ArrayDeque over the legacy, synchronized Stack class." },
+      { java: "Compare boxed Characters and Integers with .equals(), not ==." }],
     code: {
       py: `stack = []
 stack.append(1)        # push
@@ -289,7 +315,11 @@ static bool IsValid(string s) {
     when: ["Breadth-first search (level by level)", "Processing tasks in arrival order", "Sliding window maximum (monotonic deque)"],
     ops: [["Enqueue (back)", "O(1)"], ["Dequeue (front)", "O(1)"], ["Peek front", "O(1)"], ["Deque: push/pop either end", "O(1)"], ["Search", "O(n)"]],
     builtin: { py: "collections.deque", java: "ArrayDeque<T> (Queue / Deque)", cs: "Queue<T>; LinkedList<T> as a deque" },
-    pitfalls: ["Python list.pop(0) is O(n). Always use deque.popleft().", "Java poll()/peek() return null on empty; remove()/element() throw.", "Mark nodes as seen when you enqueue them (not when you dequeue) to avoid duplicates in BFS."],
+    pitfalls: [
+      { py: "list.pop(0) is O(n). Always use collections.deque and popleft().",
+        java: "poll() and peek() return null on an empty queue; remove() and element() throw.",
+        cs: "Dequeue() throws on an empty Queue<T>. Check Count first, or use TryDequeue." },
+      "Mark nodes as seen when you enqueue them (not when you dequeue) to avoid duplicates in BFS."],
     code: {
       py: `from collections import deque
 
@@ -347,11 +377,22 @@ int first = dq.First.Value;     // 0`,
   },
   {
     id: "hashmap", name: "Hash map", short: "HM",
-    what: "Stores key -> value pairs. A hash function turns each key into a bucket index, so lookups, inserts and deletes are O(1) on average. Keys must be hashable/immutable (or have consistent equals and hashCode).",
+    what: {
+      py: "Stores key -> value pairs. A hash function turns each key into a bucket index, so lookups, inserts and deletes are O(1) on average. Keys must be hashable: numbers, strings and tuples work; lists don't.",
+      java: "Stores key -> value pairs. A hash function turns each key into a bucket index, so lookups, inserts and deletes are O(1) on average. Keys need consistent equals() and hashCode().",
+      cs: "Stores key -> value pairs. A hash function turns each key into a bucket index, so lookups, inserts and deletes are O(1) on average. Keys need consistent Equals() and GetHashCode().",
+    },
     when: ["Counting frequencies", "'Have I seen this before?' with extra info (like an index)", "Grouping items by a computed key", "Memoization caches"],
     ops: [["Get / put / delete", "O(1) average"], ["Contains key", "O(1) average"], ["Iterate all entries", "O(n)"], ["Worst case (many collisions)", "O(n)"]],
     builtin: { py: "dict, collections.Counter, defaultdict", java: "HashMap<K, V> (LinkedHashMap keeps order)", cs: "Dictionary<TKey, TValue>" },
-    pitfalls: ["Reading a missing key throws in Python (KeyError) and C# (KeyNotFoundException); Java returns null.", "Mutable keys (Python lists) can't be used. Convert to a tuple.", "Don't modify a map while iterating over it."],
+    pitfalls: [
+      { py: "Reading a missing key raises KeyError. Use d.get(k, default), or a defaultdict.",
+        java: "get() on a missing key returns null, and unboxing that null into an int throws. Use getOrDefault().",
+        cs: "Reading a missing key throws KeyNotFoundException. Use TryGetValue() or GetValueOrDefault()." },
+      { py: "Lists can't be keys because they're mutable. Convert to a tuple first.",
+        java: "Never change a key object while it's in the map: its hashCode() changes and the entry is lost.",
+        cs: "Never change a key object while it's in the dictionary: its hash changes and the entry is lost. Records make good keys." },
+      "Don't modify a map while iterating over it."],
     code: {
       py: `from collections import defaultdict, Counter
 
@@ -416,7 +457,12 @@ foreach (char ch in "banana")
     when: ["Removing duplicates", "Visited sets in BFS / DFS", "Fast membership checks instead of scanning a list"],
     ops: [["Add / remove / contains", "O(1) average"], ["Union / intersection", "O(n + m)"], ["Iterate", "O(n)"]],
     builtin: { py: "set, frozenset", java: "HashSet<T> (TreeSet if sorted)", cs: "HashSet<T> (SortedSet if sorted)" },
-    pitfalls: ["Sets are unordered: don't rely on iteration order.", "x in list is O(n) but x in set is O(1). Convert once if you check many times.", "add() returns false (Java/C#) when the item already exists, which is a handy duplicate check."],
+    pitfalls: ["Sets are unordered: don't rely on iteration order.",
+      { py: "x in list is O(n) but x in set is O(1). Convert once if you check many times.",
+        java: "list.contains(x) is O(n) but set.contains(x) is O(1). Convert once if you check many times.",
+        cs: "list.Contains(x) is O(n) but set.Contains(x) is O(1). Convert once if you check many times." },
+      { java: "add() returns false when the item already exists, which is a handy duplicate check.",
+        cs: "Add() returns false when the item already exists, which is a handy duplicate check." }],
     code: {
       py: `seen = set()
 seen.add(3)
@@ -468,7 +514,7 @@ var diff = new HashSet<int>(a);  diff.ExceptWith(b);       // {1}`,
     when: ["Hierarchical data", "Most 'tree' interview problems: depth, paths, symmetry, views", "Expression trees, decision trees, recursion practice"],
     ops: [["Visit every node (any traversal)", "O(n)"], ["Height / depth", "O(n)"], ["Search (unsorted tree)", "O(n)"], ["Recursion stack", "O(h): log n balanced, n skewed"]],
     builtin: { py: "None (write your own TreeNode)", java: "None (write your own TreeNode)", cs: "None (write your own TreeNode)" },
-    pitfalls: ["Always handle the empty tree (root is None/null) first.", "Decide what each recursive call returns before writing it.", "Deep, skewed trees can overflow the recursion stack. Use an explicit stack if needed."],
+    pitfalls: [{ py: "Always handle the empty tree (root is None) first.", java: "Always handle the empty tree (root == null) first.", cs: "Always handle the empty tree (root is null) first." }, "Decide what each recursive call returns before writing it.", "Deep, skewed trees can overflow the recursion stack. Use an explicit stack if needed."],
     code: {
       py: `from collections import deque
 
@@ -669,7 +715,14 @@ int floor = between.Max;                         // 5 = largest in [3, 6]`,
     when: ["Top-k / k-th largest or smallest", "Repeatedly process the cheapest next item (Dijkstra, scheduling)", "Merging k sorted lists, running median"],
     ops: [["Peek min (or max)", "O(1)"], ["Push", "O(log n)"], ["Pop min", "O(log n)"], ["Build from n items (heapify)", "O(n)"], ["Search arbitrary item", "O(n)"]],
     builtin: { py: "heapq (min-heap on a list)", java: "PriorityQueue<T> (min-heap)", cs: "PriorityQueue<TElement, TPriority> (.NET 6+)" },
-    pitfalls: ["Python heapq is min-only: push negated values for a max-heap.", "A heap is not sorted: only the top is guaranteed.", "For ties in Python tuples, add a counter so non-comparable items are never compared."],
+    pitfalls: [
+      { py: "heapq is min-only: push negated values for a max-heap.",
+        java: "PriorityQueue is a min-heap by default: pass Comparator.reverseOrder() for a max-heap.",
+        cs: "PriorityQueue<TElement, TPriority> is a min-heap: negate the priority, or pass a reversed comparer, for a max-heap." },
+      "A heap is not sorted: only the top is guaranteed.",
+      { py: "For ties in tuples, add a counter, (priority, count, item), so non-comparable items are never compared.",
+        java: "Iterating a PriorityQueue doesn't give sorted order: only poll() returns items smallest first.",
+        cs: "Enumerating UnorderedItems doesn't give sorted order: only Dequeue() returns items smallest first." }],
     code: {
       py: `import heapq
 

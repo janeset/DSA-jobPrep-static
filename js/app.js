@@ -199,7 +199,7 @@ function langUnits(lang) {
   return m.lessons().map((l) => [m.prefix + l.id, lessonLabel(l), langLessonDone(lang, l) === l.exercises.length]);
 }
 // A principles lesson is done once its quiz is all correct, or it's marked as reviewed.
-const prDone = (l) => learnRead("pr:" + l.id) || l.quiz.every((q) => S.principles[q.id]);
+const prDone = (l) => learnRead("pr:" + l.id) || prQuiz(l).every((q) => S.principles[q.id]);
 function learnPath() {
   return [
     ...PRINCIPLES.map((l) => ["pr:" + l.id, l.name, prDone(l)]),
@@ -328,7 +328,7 @@ const views = {
       : LANG_META[lg].lessons().map((l, i) => [LANG_META[lg].prefix + l.id, lessonLabel(l), `${langLessonDone(lg, l)}/${l.exercises.length}`, (lg === "java" ? "J" : "C") + (i + 1)]));
     const side = `<button class="side-toggle" id="ref-compact" title="${compact ? "Expand sidebar" : "Compact sidebar"}"><span class="lbl">Compact</span><span>${compact ? "&raquo;" : "&laquo;"}</span></button>`
       + (compact ? "" : `<div class="side-lang"><span class="muted">Main language</span><div class="seg">${LANGS.map(([v, l]) => `<button data-dslang="${v}" class="${lang === v ? "on" : ""}">${l}</button>`).join("")}</div></div>`)
-      + grp("1 · Programming principles", PRINCIPLES.map((l, i) => ["pr:" + l.id, `${i + 1}. ${l.name}`, prDone(l) ? "✓" : `${l.quiz.filter((q) => S.principles[q.id]).length}/${l.quiz.length}`, l.short]),
+      + grp("1 · Programming principles", PRINCIPLES.map((l, i) => ["pr:" + l.id, `${i + 1}. ${l.name}`, prDone(l) ? "✓" : `${prQuiz(l).filter((q) => S.principles[q.id]).length}/${prQuiz(l).length}`, l.short]),
         `${PRINCIPLES.filter(prDone).length}/${PRINCIPLES.length}`)
       + langGroup(lang, `2 · ${langName(lang)} refresher`)
       + grp("3 · Complexity", [["bigo", "Big-O", Object.keys(S.bigo).length === BIGO_QUIZ.length || learnRead("bigo") ? "✓" : `${Object.keys(S.bigo).length}/${BIGO_QUIZ.length}`, "O(n)"]])
@@ -538,29 +538,41 @@ function refDSOverview() {
 
 // Escaped text with `backticks` shown as inline code (the principles content uses them).
 const md = (s) => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>");
+// Lesson text (principles, data structures) can be shared or per language: a string shows for every
+// language, { py, java, cs } shows the main language's version, and an item with no version for the
+// main language is hidden, so a Java learner never sees Python-only tips and vice versa.
+const forLang = (v, lang = mainLang()) => (v == null || typeof v === "string" ? v : v[lang]);
+const langList = (list) => list.map((v) => forLang(v)).filter((v) => v != null);
+const allLangText = (v) => (typeof v === "string" ? v : Object.values(v).join(" "));
+// How to run the Java / C# fragments, in the main language's own terms.
+const snippetNote = (lang) => (lang === "java"
+  ? "Java snippets are fragments: put the statements inside a method (such as main), and keep the imports shown."
+  : "C# snippets are fragments: they run as top-level statements in a console app (type declarations go at the end), or inside a method. Keep the usings shown.");
+// A quiz question with `langs` only shows for those languages.
+const prQuiz = (l, lang = mainLang()) => l.quiz.filter((q) => !q.langs || q.langs.includes(lang));
 // Programming principles lesson: the idea, code in your main language, pitfalls, then a quiz.
 function refPrinciple(id) {
   const l = PRINCIPLES.find((x) => x.id === id), n = PRINCIPLES.indexOf(l) + 1, lang = mainLang();
-  const pq = views._pq = views._pq || {}, solved = l.quiz.filter((q) => S.principles[q.id]).length;
-  const quiz = l.quiz.map((q, i) => {
+  const pq = views._pq = views._pq || {}, qs = prQuiz(l), solved = qs.filter((q) => S.principles[q.id]).length;
+  const quiz = qs.map((q, i) => {
     const ch = pq[q.id], answered = ch !== undefined;
-    return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.principles[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><p>${md(q.q)}</p>
-      <div class="pq-opts">${q.options.map((o, j) => `<button class="btn small ${answered && j === q.a ? "primary" : ""} ${answered && j === ch && j !== q.a ? "pq-wrong" : ""}" data-pq="${q.id}" data-popt="${j}" ${answered ? "disabled" : ""}>${md(o)}</button>`).join("")}</div>
-      ${answered ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite."}</b> ${md(q.why)}</p><button class="btn small" data-pretry="${q.id}">Try again</button>` : ""}</div>`;
+    return `<div class="card"><h3 class="ex-title">Question ${i + 1} ${S.principles[q.id] ? '<span class="badge done">Solved</span>' : ""}</h3><p>${md(forLang(q.q))}</p>
+      <div class="pq-opts">${q.options.map((o, j) => `<button class="btn small ${answered && j === q.a ? "primary" : ""} ${answered && j === ch && j !== q.a ? "pq-wrong" : ""}" data-pq="${q.id}" data-popt="${j}" ${answered ? "disabled" : ""}>${md(forLang(o))}</button>`).join("")}</div>
+      ${answered ? `<p class="${ch === q.a ? "s-solved" : "M"}"><b>${ch === q.a ? "Correct." : "Not quite."}</b> ${md(forLang(q.why))}</p><button class="btn small" data-pretry="${q.id}">Try again</button>` : ""}</div>`;
   }).join("");
   return `<div class="label">Programming principles · ${esc(l.part)} · Lesson ${n} of ${PRINCIPLES.length}</div><h2>${esc(l.name)}</h2>
-    <div class="card"><p>${md(l.what)}</p>
-      <h3>Key ideas</h3><ul>${l.points.map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
+    <div class="card"><p>${md(forLang(l.what))}</p>
+      <h3>Key ideas</h3><ul>${langList(l.points).map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
     <div class="card"><div class="section-head"><h3>Code</h3>${langSeg()}</div>
       <pre class="language-${lang}">${esc(l.code[lang])}</pre>
-      <div class="row">${lang === "py" ? `<button class="btn small primary" data-prrun="${l.id}">Run in the scratchpad</button>` : `<span class="muted">${lang === "java" ? "Java" : "C#"} snippets are fragments: put statements in a method (C# also allows top-level statements) and keep the imports shown.</span>`}
+      <div class="row">${lang === "py" ? `<button class="btn small primary" data-prrun="${l.id}">Run in the scratchpad</button>` : `<span class="muted">${snippetNote(lang)}</span>`}
         <button class="btn small" data-prcopy="${l.id}">Copy</button></div></div>
     <div class="cols-2">
-      <div class="card"><h3>Watch out for</h3><ul>${l.pitfalls.map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
-      <div class="card"><h3>In interviews</h3><p>${md(l.interview)}</p>
+      <div class="card"><h3>Watch out for</h3><ul>${langList(l.pitfalls).map((p) => `<li>${md(p)}</li>`).join("")}</ul></div>
+      <div class="card"><h3>In interviews</h3><p>${md(forLang(l.interview))}</p>
         <a class="btn small" href="${yt(l.yt)}" target="_blank" rel="noopener">Videos on YouTube &nearr;</a></div>
     </div>
-    <div class="card"><h3 style="margin:0">Quick check <span class="muted">${solved} / ${l.quiz.length} solved</span></h3>
+    <div class="card"><h3 style="margin:0">Quick check <span class="muted">${solved} / ${qs.length} solved</span></h3>
       <p class="muted" style="margin-bottom:0">Get every question right, or mark the lesson as reviewed, to complete it.</p></div>
     ${quiz}
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("pr:" + id)}</div>${learnNav("pr:" + id)}`;
@@ -569,17 +581,17 @@ function refPrinciple(id) {
 function refDS(id) {
   const d = DS.find((x) => x.id === id), lang = mainLang(), n = DS.indexOf(d) + 1;
   return `<div class="label">Data Structures Crash Course · Lesson ${n} of ${DS.length}</div><h2>${esc(d.name)}</h2>
-    <div class="card"><p>${esc(d.what)}</p>
-      <h3>Use it when</h3><ul>${d.when.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>
+    <div class="card"><p>${esc(forLang(d.what))}</p>
+      <h3>Use it when</h3><ul>${langList(d.when).map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>
     <div class="cols-2">
       <div class="card"><h3>Operations</h3><table>${d.ops.map(([op, c]) => `<tr><td>${esc(op)}</td><td style="text-align:right"><code>${esc(c)}</code></td></tr>`).join("")}</table></div>
       <div class="card"><h3>Built-in</h3><div class="list">
         ${LANGS.map(([k, l]) => `<div class="li"><span class="t">${l}</span><code>${esc(d.builtin[k])}</code></div>`).join("")}</div>
-        <h3>Watch out for</h3><ul>${d.pitfalls.map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div>
+        <h3>Watch out for</h3><ul>${langList(d.pitfalls).map((p) => `<li>${esc(p)}</li>`).join("")}</ul></div>
     </div>
     <div class="card"><div class="section-head"><h3>Code</h3>${langSeg()}</div>
       <pre class="language-${lang}">${esc(d.code[lang])}</pre>
-      <div class="row">${lang === "py" ? `<button class="btn small primary" data-dsrun="${d.id}">Run in the scratchpad</button>` : `<span class="muted">${lang === "java" ? "Java" : "C#"} snippets are fragments: put statements in a method (C# also allows top-level statements) and keep the imports shown.</span>`}
+      <div class="row">${lang === "py" ? `<button class="btn small primary" data-dsrun="${d.id}">Run in the scratchpad</button>` : `<span class="muted">${snippetNote(lang)}</span>`}
         <button class="btn small" data-dscopy="${d.id}">Copy</button></div></div>
     ${dsVideos(d.id, d.name.replace(/\s*\(.*\)$/, "") + " data structure")}
     <div class="row" style="margin-bottom:var(--gap)">${reviewBtn("ds:" + id)}</div>${learnNav("ds:" + id)}`;

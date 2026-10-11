@@ -88,6 +88,105 @@ const int MaxRetries = 3;         // a compile-time constant`,
         cs: "Integer division drops the remainder: `7 / 2` is `3`. Write `7 / 2.0` to get `3.5`." },
       "Reusing one variable for two different meanings makes code hard to follow.",
     ],
+    practice: [
+      { why: "A named constant says what the number means and gives one place to change it.",
+        bad: { py: `if retries > 3:
+    give_up()
+expires = now + 86400`, java: `long expiry(int retries, long now) {
+    if (retries > 3) giveUp();
+    return now + 86400;
+}`, cs: `long Expiry(int retries, long now)
+{
+    if (retries > 3) GiveUp();
+    return now + 86400;
+}` },
+        good: { py: `MAX_RETRIES = 3
+SECONDS_PER_DAY = 24 * 60 * 60
+
+if retries > MAX_RETRIES:
+    give_up()
+expires = now + SECONDS_PER_DAY`, java: `static final int MAX_RETRIES = 3;
+static final long SECONDS_PER_DAY = 24 * 60 * 60;
+
+long expiry(int retries, long now) {
+    if (retries > MAX_RETRIES) giveUp();
+    return now + SECONDS_PER_DAY;
+}`, cs: `const int MaxRetries = 3;
+const long SecondsPerDay = 24 * 60 * 60;
+
+long Expiry(int retries, long now)
+{
+    if (retries > MaxRetries) GiveUp();
+    return now + SecondsPerDay;
+}` } },
+      { why: "Text for everything lets typos (\"Yes\", \"y\") slip through and needs converting before every comparison. Store numbers as numbers and yes/no as booleans.",
+        bad: { py: `age = "42"
+is_member = "yes"
+if is_member == "yes" and int(age) >= 18:
+    grant()`, java: `String age = "42";
+String isMember = "yes";
+if (isMember.equals("yes") && Integer.parseInt(age) >= 18) {
+    grant();
+}`, cs: `string age = "42";
+string isMember = "yes";
+if (isMember == "yes" && int.Parse(age) >= 18)
+{
+    Grant();
+}` },
+        good: { py: `age = 42
+is_member = True
+if is_member and age >= 18:
+    grant()`, java: `int age = 42;
+boolean isMember = true;
+if (isMember && age >= 18) {
+    grant();
+}`, cs: `int age = 42;
+bool isMember = true;
+if (isMember && age >= 18)
+{
+    Grant();
+}` } },
+      { why: "Decimals are approximations, so two results that should match can differ in the last digit. Compare with a small tolerance.",
+        bad: { py: `total = 0.1 + 0.2
+if total == 0.3:              # False
+    print("equal")`, java: `double total = 0.1 + 0.2;
+if (total == 0.3) {           // false
+    System.out.println("equal");
+}`, cs: `double total = 0.1 + 0.2;
+if (total == 0.3)             // false
+{
+    Console.WriteLine("equal");
+}` },
+        good: { py: `import math
+
+total = 0.1 + 0.2
+if math.isclose(total, 0.3):  # True
+    print("equal")`, java: `final double EPS = 1e-9;
+double total = 0.1 + 0.2;
+if (Math.abs(total - 0.3) < EPS) {   // true
+    System.out.println("equal");
+}`, cs: `const double Eps = 1e-9;
+double total = 0.1 + 0.2;
+if (Math.Abs(total - 0.3) < Eps)     // true
+{
+    Console.WriteLine("equal");
+}` } },
+      { why: "One variable, one meaning. When a name changes meaning halfway through, every reader has to track which version they're looking at.",
+        bad: { py: `data = line.split(",")
+data = [int(x) for x in data]     # now numbers
+data = sum(data)                  # now a single total`, java: `int n = 0;
+for (int s : scores) n += s;
+n = n / scores.length;            // n was the sum, now it's the average`, cs: `int n = 0;
+foreach (int s in scores) n += s;
+n = n / scores.Length;            // n was the sum, now it's the average` },
+        good: { py: `parts = line.split(",")
+numbers = [int(p) for p in parts]
+total = sum(numbers)`, java: `int sum = 0;
+for (int s : scores) sum += s;
+int average = sum / scores.length;`, cs: `int sum = 0;
+foreach (int s in scores) sum += s;
+int average = sum / scores.Length;` } },
+    ],
     interview: {
       py: "Say which division you mean (`/` or `//`) and compare floats with a tolerance. Small slips like these are what interviewers notice in otherwise working code.",
       java: "Overflow is a favourite follow-up: if you sum large values or compute a midpoint, say why you use `long` or `lo + (hi - lo) / 2`.",
@@ -585,6 +684,68 @@ Console.WriteLine(string.Join(", ", new[] { 1, 2, 3 }.Select(square)));   // 1, 
       { java: "Several parameters of the same type (`int, int, int`) are easy to pass in the wrong order. Name things clearly, or group them in a record.",
         cs: "Several parameters of the same type (`int, int, int`) are easy to pass in the wrong order. Named arguments help: `Resize(width: 3, height: 4)`." },
     ],
+    practice: [
+      { why: "A function that returns its result can be tested, reused and combined. Printing is the caller's choice.",
+        bad: { py: `def area(w, h):
+    print(w * h)            # the caller can't use the number`, java: `void area(int w, int h) {
+    System.out.println(w * h);   // the caller can't use the number
+}`, cs: `void Area(int w, int h)
+{
+    Console.WriteLine(w * h);    // the caller can't use the number
+}` },
+        good: { py: `def area(w, h):
+    return w * h
+
+print(area(3, 4))           # print where you need it`, java: `int area(int w, int h) {
+    return w * h;
+}`, cs: `int Area(int w, int h) => w * h;` } },
+      { why: "Everything a function uses should come in as a parameter and leave as a return value. Hidden shared state makes calls depend on what ran before.",
+        bad: { py: `total = 0
+
+def add(price):
+    global total
+    total += price          # changes hidden shared state`, java: `static int total = 0;
+
+static void add(int price) {
+    total += price;         // changes hidden shared state
+}`, cs: `static int total = 0;
+
+static void Add(int price)
+{
+    total += price;         // changes hidden shared state
+}` },
+        good: { py: `def add(total, price):
+    return total + price
+
+total = add(0, 5)`, java: `static int add(int total, int price) {
+    return total + price;   // inputs in, result out
+}`, cs: `static int Add(int total, int price) => total + price;   // inputs in, result out` } },
+      { why: { py: "A default value is created once, when the function is defined, so a list default is shared by every call. Default to `None` and create the list inside.",
+          java: "Five loose parameters are easy to pass in the wrong order. A record groups them with names.",
+          cs: "Five loose parameters are easy to pass in the wrong order. A record groups them with names." },
+        bad: { py: `def add_tag(tag, tags=[]):
+    tags.append(tag)        # the same list on every call
+    return tags`, java: `void book(String name, String email, String phone, int guests, String date) {
+    save(name, email, phone, guests, date);
+}`, cs: `void Book(string name, string email, string phone, int guests, string date)
+{
+    Save(name, email, phone, guests, date);
+}` },
+        good: { py: `def add_tag(tag, tags=None):
+    if tags is None:
+        tags = []           # a new list for each call
+    tags.append(tag)
+    return tags`, java: `record Booking(String name, String email, String phone, int guests, String date) {}
+
+void book(Booking booking) {
+    save(booking);
+}`, cs: `record Booking(string Name, string Email, string Phone, int Guests, string Date);
+
+void Book(Booking booking)
+{
+    Save(booking);
+}` } },
+    ],
     interview: {
       py: "Split a solution into small helpers (`in_bounds(r, c)`, `neighbors(node)`). The interviewer follows it faster, and a bug is easier to find in a five-line function.",
       java: "Split a solution into small helpers (`inBounds(r, c)`, `neighbors(node)`). The interviewer follows it faster, and a bug is easier to find in a five-line method.",
@@ -705,6 +866,80 @@ struct Point { public int X, Y; public Point(int x, int y) { X = x; Y = y; } }`,
       { java: "Comparing strings with `==` checks identity, not contents. Use `.equals`.",
         cs: "A struct you get from a list or a property is a copy: changing it doesn't change the original." },
     ],
+    practice: [
+      { why: "Sorting in place also reorders the caller's list. Unless changing it is the point (and the name says so), work on a copy.",
+        bad: { py: `def sorted_scores(scores):
+    scores.sort()           # also reorders the caller's list
+    return scores`, java: `List<Integer> sortedScores(List<Integer> scores) {
+    Collections.sort(scores);    // also reorders the caller's list
+    return scores;
+}`, cs: `List<int> SortedScores(List<int> scores)
+{
+    scores.Sort();               // also reorders the caller's list
+    return scores;
+}` },
+        good: { py: `def sorted_scores(scores):
+    return sorted(scores)   # a new list; the caller's is untouched`, java: `List<Integer> sortedScores(List<Integer> scores) {
+    List<Integer> copy = new ArrayList<>(scores);
+    Collections.sort(copy);      // the caller's list is untouched
+    return copy;
+}`, cs: `List<int> SortedScores(List<int> scores)
+{
+    var copy = new List<int>(scores);
+    copy.Sort();                 // the caller's list is untouched
+    return copy;
+}` } },
+      { why: "Storing the list you keep changing stores a reference, not its current contents. Store a copy to keep a snapshot.",
+        bad: { py: `res, path = [], []
+for x in [1, 2]:
+    path.append(x)
+    res.append(path)        # the same list, twice
+print(res)                  # [[1, 2], [1, 2]]`, java: `List<List<Integer>> res = new ArrayList<>();
+List<Integer> path = new ArrayList<>();
+for (int x : new int[] {1, 2}) {
+    path.add(x);
+    res.add(path);               // the same list, twice
+}
+System.out.println(res);         // [[1, 2], [1, 2]]`, cs: `var res = new List<List<int>>();
+var path = new List<int>();
+foreach (int x in new[] { 1, 2 })
+{
+    path.Add(x);
+    res.Add(path);               // the same list, twice
+}
+// res[0] and res[1] are both [1, 2]` },
+        good: { py: `res, path = [], []
+for x in [1, 2]:
+    path.append(x)
+    res.append(path[:])     # a snapshot
+print(res)                  # [[1], [1, 2]]`, java: `List<List<Integer>> res = new ArrayList<>();
+List<Integer> path = new ArrayList<>();
+for (int x : new int[] {1, 2}) {
+    path.add(x);
+    res.add(new ArrayList<>(path));   // a snapshot
+}
+System.out.println(res);              // [[1], [1, 2]]`, cs: `var res = new List<List<int>>();
+var path = new List<int>();
+foreach (int x in new[] { 1, 2 })
+{
+    path.Add(x);
+    res.Add(new List<int>(path));     // a snapshot
+}
+// res[0] is [1], res[1] is [1, 2]` } },
+      { why: "Repeating one row object makes every row the same object, so a change to one shows up in all of them. Create each row separately.",
+        bad: { py: `grid = [[0] * 3] * 2         # two references to one row
+grid[0][0] = 1
+print(grid)                  # [[1, 0, 0], [1, 0, 0]]`, java: `int[][] grid = new int[2][];
+Arrays.fill(grid, new int[3]);   // one row array in both slots
+grid[0][0] = 1;                  // grid[1][0] is now 1 too`, cs: `var grid = Enumerable.Repeat(new int[3], 2).ToArray();   // one row in both slots
+grid[0][0] = 1;                  // grid[1][0] is now 1 too` },
+        good: { py: `grid = [[0] * 3 for _ in range(2)]   # a new row each time
+grid[0][0] = 1
+print(grid)                  # [[1, 0, 0], [0, 0, 0]]`, java: `int[][] grid = new int[2][3];    // independent rows
+grid[0][0] = 1;                  // grid[1][0] is still 0`, cs: `var grid = new int[2][];
+for (int r = 0; r < grid.Length; r++) grid[r] = new int[3];   // independent rows
+grid[0][0] = 1;                  // grid[1][0] is still 0` } },
+    ],
     interview: {
       py: "The backtracking copy bug is a classic: if every result comes out empty, you appended the shared `path` instead of `path[:]`.",
       java: "The backtracking copy bug is a classic: if every result comes out empty, you added the shared `path` instead of `new ArrayList<>(path)`.",
@@ -811,6 +1046,94 @@ Console.WriteLine(Fib(80));            // 23416728348467685`,
       "Plain recursive Fibonacci repeats work exponentially. Memoize, or build the answer bottom-up.",
       "Backtracking that changes shared state must undo the change after the recursive call.",
     ],
+    practice: [
+      { why: "Write the base case first, so every call path has a way to stop.",
+        bad: { py: `def count_down(n):
+    print(n)
+    count_down(n - 1)       # never stops`, java: `void countDown(int n) {
+    System.out.println(n);
+    countDown(n - 1);       // never stops
+}`, cs: `void CountDown(int n)
+{
+    Console.WriteLine(n);
+    CountDown(n - 1);       // never stops
+}` },
+        good: { py: `def count_down(n):
+    if n < 0:               # base case first
+        return
+    print(n)
+    count_down(n - 1)`, java: `void countDown(int n) {
+    if (n < 0) return;      // base case first
+    System.out.println(n);
+    countDown(n - 1);
+}`, cs: `void CountDown(int n)
+{
+    if (n < 0) return;      // base case first
+    Console.WriteLine(n);
+    CountDown(n - 1);
+}` } },
+      { why: "Plain recursive Fibonacci solves the same subproblems over and over (O(2ⁿ)). Remembering each answer makes it O(n).",
+        bad: { py: `def fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)`, java: `long fib(int n) {
+    if (n < 2) return n;
+    return fib(n - 1) + fib(n - 2);
+}`, cs: `long Fib(int n)
+{
+    if (n < 2) return n;
+    return Fib(n - 1) + Fib(n - 2);
+}` },
+        good: { py: `from functools import cache
+
+@cache                      # remembers each answer
+def fib(n):
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)`, java: `Map<Integer, Long> memo = new HashMap<>();
+
+long fib(int n) {
+    if (n < 2) return n;
+    Long known = memo.get(n);
+    if (known != null) return known;
+    long result = fib(n - 1) + fib(n - 2);
+    memo.put(n, result);
+    return result;
+}`, cs: `Dictionary<int, long> memo = new();
+
+long Fib(int n)
+{
+    if (n < 2) return n;
+    if (memo.TryGetValue(n, out long known)) return known;
+    long result = Fib(n - 1) + Fib(n - 2);
+    memo[n] = result;
+    return result;
+}` } },
+      { why: "Copying the rest of the input on every call adds O(n) work per call, O(n²) in total. Pass an index instead.",
+        bad: { py: `def total(nums):
+    if not nums:
+        return 0
+    return nums[0] + total(nums[1:])   # copies the list each call`, java: `int total(int[] nums) {
+    if (nums.length == 0) return 0;
+    // copies the rest of the array on every call
+    return nums[0] + total(Arrays.copyOfRange(nums, 1, nums.length));
+}`, cs: `int Total(int[] nums)
+{
+    if (nums.Length == 0) return 0;
+    return nums[0] + Total(nums[1..]);   // copies the array each call
+}` },
+        good: { py: `def total(nums, i=0):
+    if i == len(nums):
+        return 0
+    return nums[i] + total(nums, i + 1)`, java: `int total(int[] nums, int i) {   // call total(nums, 0)
+    if (i == nums.length) return 0;
+    return nums[i] + total(nums, i + 1);
+}`, cs: `int Total(int[] nums, int i = 0)
+{
+    if (i == nums.Length) return 0;
+    return nums[i] + Total(nums, i + 1);
+}` } },
+    ],
     interview: "State the base case and what each call returns before writing code, and count the call stack in your space complexity: a recursive DFS is O(h) space.",
     quiz: [
       { id: "rec1", q: "What two things does every recursive function need?",
@@ -903,6 +1226,84 @@ Console.WriteLine(x);                 // 6`,
       "A function that changes its argument as a side effect surprises callers. Say so in its name, or return a new value.",
       "Deep recursion: thousands of frames can overflow the stack.",
       "A cache or listener list that only grows keeps objects alive forever.",
+    ],
+    practice: [
+      { why: "Assigning to a parameter only points the local name somewhere new. To change the caller's object, call a method on it (or return a new value).",
+        bad: { py: `def reset(items):
+    items = []              # only rebinds the local name`, java: `void reset(List<String> items) {
+    items = new ArrayList<>();   // only changes the local variable
+}`, cs: `void Reset(List<string> items)
+{
+    items = new List<string>();  // only changes the local variable
+}` },
+        good: { py: `def reset(items):
+    items.clear()           # empties the caller's list`, java: `void reset(List<String> items) {
+    items.clear();               // empties the caller's list
+}`, cs: `void Reset(List<string> items)
+{
+    items.Clear();               // empties the caller's list
+}` } },
+      { why: "Reading a whole file into memory fails on big files. Stream it a line at a time, and let the language close the file.",
+        bad: { py: `def count_errors(path):
+    lines = open(path).readlines()       # whole file in memory, never closed
+    return sum("ERROR" in line for line in lines)`, java: `long countErrors(Path path) throws IOException {
+    List<String> lines = Files.readAllLines(path);   // whole file in memory
+    return lines.stream().filter(l -> l.contains("ERROR")).count();
+}`, cs: `int CountErrors(string path)
+{
+    string[] lines = File.ReadAllLines(path);       // whole file in memory
+    return lines.Count(l => l.Contains("ERROR"));
+}` },
+        good: { py: `def count_errors(path):
+    with open(path) as f:                # one line at a time, closed after
+        return sum("ERROR" in line for line in f)`, java: `long countErrors(Path path) throws IOException {
+    // one line at a time, closed after
+    try (Stream<String> lines = Files.lines(path)) {
+        return lines.filter(l -> l.contains("ERROR")).count();
+    }
+}`, cs: `int CountErrors(string path) =>
+    File.ReadLines(path).Count(l => l.Contains("ERROR"));   // one line at a time` } },
+      { why: "A cache that only grows keeps every object alive until the program runs out of memory. Give it a size limit.",
+        bad: { py: `cache = {}
+
+def lookup(key):
+    if key not in cache:
+        cache[key] = fetch(key)     # grows forever
+    return cache[key]`, java: `Map<String, String> cache = new HashMap<>();
+
+String lookup(String key) {
+    return cache.computeIfAbsent(key, k -> fetch(k));   // grows forever
+}`, cs: `Dictionary<string, string> cache = new();
+
+string Lookup(string key)
+{
+    if (!cache.TryGetValue(key, out var value))
+        cache[key] = value = Fetch(key);   // grows forever
+    return value;
+}` },
+        good: { py: `from functools import lru_cache
+
+@lru_cache(maxsize=1000)            # keeps the 1,000 most recent
+def lookup(key):
+    return fetch(key)`, java: `static final int MAX = 1000;
+Map<String, String> cache = new LinkedHashMap<>(16, 0.75f, true) {
+    protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+        return size() > MAX;        // drops the least recently used
+    }
+};
+
+String lookup(String key) {
+    return cache.computeIfAbsent(key, k -> fetch(k));
+}`, cs: `const int Max = 1000;
+Dictionary<string, string> cache = new();
+
+string Lookup(string key)
+{
+    if (cache.TryGetValue(key, out var value)) return value;
+    // simplest cap; an LRU would drop one entry instead
+    if (cache.Count >= Max) cache.Clear();
+    return cache[key] = Fetch(key);
+}` } },
     ],
     interview: "When asked for space complexity, count the call stack too: \"O(n) for the hash map plus O(h) for the recursion\".",
     quiz: [
@@ -1017,6 +1418,129 @@ class BankAccount
       "\"God classes\" that do everything. Split by responsibility.",
       "Making a class for something that's only ever one function call.",
     ],
+    practice: [
+      { why: { py: "Without `self.`, the value goes into a local variable that disappears when `__init__` returns.",
+          java: "A parameter with the same name as a field hides it. `this.` says which one you mean.",
+          cs: "A parameter with the same name as a field hides it. `this.` says which one you mean." },
+        bad: { py: `class Counter:
+    def __init__(self):
+        count = 0           # a local variable, not an attribute
+
+    def add(self):
+        self.count += 1     # AttributeError`, java: `class Account {
+    private int balance;
+
+    Account(int balance) {
+        balance = balance;  // assigns the parameter to itself
+    }
+}`, cs: `class Account
+{
+    private int balance;
+
+    public Account(int balance)
+    {
+        balance = balance;  // assigns the parameter to itself
+    }
+}` },
+        good: { py: `class Counter:
+    def __init__(self):
+        self.count = 0      # an attribute on this object
+
+    def add(self):
+        self.count += 1`, java: `class Account {
+    private int balance;
+
+    Account(int balance) {
+        this.balance = balance;
+    }
+}`, cs: `class Account
+{
+    private int balance;
+
+    public Account(int balance)
+    {
+        this.balance = balance;
+    }
+}` } },
+      { why: { py: "A list written at class level is created once and shared by every instance. Create per-object data in `__init__`.",
+          java: "A `static` field is shared by every instance. Data that belongs to each object needs an instance field.",
+          cs: "A `static` field is shared by every instance. Data that belongs to each object needs an instance field." },
+        bad: { py: `class Team:
+    members = []            # one list shared by every team
+
+    def add(self, name):
+        self.members.append(name)`, java: `class Team {
+    static List<String> members = new ArrayList<>();   // shared by every team
+
+    void add(String name) { members.add(name); }
+}`, cs: `class Team
+{
+    static List<string> members = new();   // shared by every team
+
+    public void Add(string name) => members.Add(name);
+}` },
+        good: { py: `class Team:
+    def __init__(self):
+        self.members = []   # one list per team
+
+    def add(self, name):
+        self.members.append(name)`, java: `class Team {
+    private final List<String> members = new ArrayList<>();   // one list per team
+
+    void add(String name) { members.add(name); }
+}`, cs: `class Team
+{
+    private readonly List<string> members = new();   // one list per team
+
+    public void Add(string name) => members.Add(name);
+}` } },
+      { why: "Parallel lists have to be kept in step by hand, and one bad index mixes up people. A class keeps each person's data together, with names.",
+        bad: { py: `names = ["Ana", "Ben"]
+ages = [31, 25]
+emails = ["ana@example.com", "ben@example.com"]
+print(names[1], ages[1])`, java: `void show() {
+    String[] names = {"Ana", "Ben"};
+    int[] ages = {31, 25};
+    String[] emails = {"ana@example.com", "ben@example.com"};
+    System.out.println(names[1] + " " + ages[1]);
+}`, cs: `void Show()
+{
+    string[] names = { "Ana", "Ben" };
+    int[] ages = { 31, 25 };
+    string[] emails = { "ana@example.com", "ben@example.com" };
+    Console.WriteLine($"{names[1]} {ages[1]}");
+}` },
+        good: { py: `from dataclasses import dataclass
+
+@dataclass
+class Person:
+    name: str
+    age: int
+    email: str
+
+people = [
+    Person("Ana", 31, "ana@example.com"),
+    Person("Ben", 25, "ben@example.com"),
+]
+print(people[1].name, people[1].age)`, java: `record Person(String name, int age, String email) {}
+
+void show() {
+    List<Person> people = List.of(
+        new Person("Ana", 31, "ana@example.com"),
+        new Person("Ben", 25, "ben@example.com"));
+    System.out.println(people.get(1).name() + " " + people.get(1).age());
+}`, cs: `record Person(string Name, int Age, string Email);
+
+void Show()
+{
+    var people = new List<Person>
+    {
+        new("Ana", 31, "ana@example.com"),
+        new("Ben", 25, "ben@example.com"),
+    };
+    Console.WriteLine($"{people[1].Name} {people[1].Age}");
+}` } },
+    ],
     interview: "In design questions (LRU cache, parking lot), turn the nouns into classes and the verbs into methods, keep fields private, and say which object owns which data.",
     quiz: [
       { id: "cls1", q: "What's the difference between a class and an object?",
@@ -1121,6 +1645,96 @@ class Temperature
       { py: "`_name` is only a convention: it signals intent, but nothing stops access.",
         java: "`final` on a field stops reassignment, not mutation: a `final List` can still be changed.",
         cs: "`readonly` on a field stops reassignment, not mutation: a `readonly List<T>` can still be changed." },
+    ],
+    practice: [
+      { why: "A public field lets any code put the object into an invalid state. Keep the data private and change it through methods that check the rules.",
+        bad: { py: `class Account:
+    def __init__(self):
+        self.balance = 0
+
+acct = Account()
+acct.balance = -500         # nothing stops it`, java: `class Account {
+    public int balance;     // anyone can set it to -500
+}`, cs: `class Account
+{
+    public int Balance;     // anyone can set it to -500
+}` },
+        good: { py: `class Account:
+    def __init__(self):
+        self._balance = 0
+
+    @property
+    def balance(self):      # read-only from outside
+        return self._balance
+
+    def withdraw(self, amount):
+        if amount <= 0 or amount > self._balance:
+            raise ValueError("invalid amount")
+        self._balance -= amount`, java: `class Account {
+    private int balance;
+
+    public int getBalance() { return balance; }
+
+    public void withdraw(int amount) {
+        if (amount <= 0 || amount > balance)
+            throw new IllegalArgumentException("invalid amount");
+        balance -= amount;
+    }
+}`, cs: `class Account
+{
+    public int Balance { get; private set; }   // read-only from outside
+
+    public void Withdraw(int amount)
+    {
+        if (amount <= 0 || amount > Balance)
+            throw new ArgumentException("invalid amount");
+        Balance -= amount;
+    }
+}` } },
+      { why: "Handing out your internal list lets callers change it without going through your methods. Return a read-only view or a copy.",
+        bad: { py: `class Playlist:
+    def __init__(self):
+        self._songs = []
+
+    def songs(self):
+        return self._songs          # callers can append or clear it`, java: `class Playlist {
+    private final List<String> songs = new ArrayList<>();
+
+    public List<String> getSongs() {
+        return songs;               // callers can add or clear it
+    }
+}`, cs: `class Playlist
+{
+    private readonly List<string> songs = new();
+
+    public List<string> Songs => songs;   // callers can add or clear it
+}` },
+        good: { py: `class Playlist:
+    def __init__(self):
+        self._songs = []
+
+    def songs(self):
+        return tuple(self._songs)   # a read-only snapshot`, java: `class Playlist {
+    private final List<String> songs = new ArrayList<>();
+
+    public List<String> getSongs() {
+        return Collections.unmodifiableList(songs);   // read-only view
+    }
+}`, cs: `class Playlist
+{
+    private readonly List<string> songs = new();
+
+    public IReadOnlyList<string> Songs => songs.AsReadOnly();   // read-only view
+}` } },
+      { why: "\"Tell, don't ask\": when callers read an object's data, decide, and write it back, the rule is copied into every caller. Put the rule in a method on the object.",
+        bad: { py: `if acct.balance >= price:
+    acct.balance -= price       # the rule lives in every caller`, java: `if (acct.getBalance() >= price) {
+    acct.setBalance(acct.getBalance() - price);   // the rule lives in every caller
+}`, cs: `if (acct.Balance >= price)
+{
+    acct.Balance -= price;      // the rule lives in every caller
+}` },
+        good: { py: `acct.pay(price)                 # Account checks its own rule`, java: `acct.pay(price);                // Account checks its own rule`, cs: `acct.Pay(price);                // Account checks its own rule` } },
     ],
     interview: {
       py: "In a design round, say it explicitly: \"`_balance` is internal; the only way to change it is `withdraw()`, which rejects overdrafts.\"",
@@ -1238,6 +1852,74 @@ class MemoryStorage : IStorage              // one HOW: a dictionary in memory
       "Abstracting too early adds interfaces nobody needs.",
       "Mixing levels: a function that does both high-level steps and low-level details is hard to read.",
     ],
+    practice: [
+      { why: "A function that mixes high-level steps with low-level details is hard to read. Name each step and let the top level read like a summary.",
+        bad: { py: `def checkout(cart, card):
+    total = sum(item.price * item.qty for item in cart)
+    if total > 100:
+        total *= 0.9
+    gateway.connect()
+    gateway.send({"card": card, "amount": total})
+    gateway.close()`, java: `void checkout(List<Item> cart, String card) {
+    double total = 0;
+    for (Item item : cart) total += item.price() * item.qty();
+    if (total > 100) total *= 0.9;
+    gateway.connect();
+    gateway.send(card, total);
+    gateway.close();
+}`, cs: `void Checkout(List<Item> cart, string card)
+{
+    double total = 0;
+    foreach (var item in cart) total += item.Price * item.Qty;
+    if (total > 100) total *= 0.9;
+    gateway.Connect();
+    gateway.Send(card, total);
+    gateway.Close();
+}` },
+        good: { py: `def checkout(cart, card):
+    total = apply_discount(subtotal(cart))
+    charge(card, total)         # each step is one named call`, java: `void checkout(List<Item> cart, String card) {
+    double total = applyDiscount(subtotal(cart));
+    charge(card, total);        // each step is one named call
+}`, cs: `void Checkout(List<Item> cart, string card)
+{
+    double total = ApplyDiscount(Subtotal(cart));
+    Charge(card, total);        // each step is one named call
+}` } },
+      { why: "If callers must remember to connect first and close after, the abstraction leaks. Let the object manage its own setup and cleanup.",
+        bad: { py: `db = Database()
+db.connect()                # forget this and save() crashes
+db.save(record)
+db.close()                  # skipped if save() raises`, java: `Database db = new Database();
+db.connect();               // forget this and save() crashes
+db.save(record);
+db.close();                 // skipped if save() throws`, cs: `var db = new Database();
+db.Connect();               // forget this and Save() crashes
+db.Save(record);
+db.Close();                 // skipped if Save() throws` },
+        good: { py: `with Database() as db:      # connects, and always closes
+    db.save(record)`, java: `try (Database db = Database.open()) {   // connected, and always closed
+    db.save(record);
+}`, cs: `using (var db = Database.Open())        // connected, and always disposed
+{
+    db.Save(record);
+}` } },
+      { why: "Checking raw data everywhere spreads one rule across the code. A method with a meaningful name hides the representation and keeps the rule in one place.",
+        bad: { py: `if user.role == "admin" or user.role == "owner":
+    show_edit_button()`, java: `if (user.getRole().equals("admin") || user.getRole().equals("owner")) {
+    showEditButton();
+}`, cs: `if (user.Role == "admin" || user.Role == "owner")
+{
+    ShowEditButton();
+}` },
+        good: { py: `if user.can_edit():         # the rule lives in User
+    show_edit_button()`, java: `if (user.canEdit()) {       // the rule lives in User
+    showEditButton();
+}`, cs: `if (user.CanEdit())         // the rule lives in User
+{
+    ShowEditButton();
+}` } },
+    ],
     interview: {
       py: "Write the top level first (`return bfs(build_graph(edges), start)`) and fill in the helpers after. It shows the plan and keeps each piece simple.",
       java: "Write the top level first (`return bfs(buildGraph(edges), start);`) and fill in the helpers after. It shows the plan and keeps each piece simple.",
@@ -1353,6 +2035,173 @@ class Car                                            // composition: a Car HAS a
       "`Square` as a subclass of `Rectangle` looks right but breaks code that sets width and height separately (Liskov).",
       "Using inheritance for \"has-a\": a `Car` that extends `Engine` gets engine methods it shouldn't expose.",
     ],
+    practice: [
+      { why: "Inheritance means \"is a\". A car has an engine; it isn't one. Holding the part as a field (composition) exposes only what you choose.",
+        bad: { py: `class Engine:
+    def start(self):
+        print("vroom")
+
+class Car(Engine):          # a car is not an engine
+    pass`, java: `class Engine {
+    void start() { System.out.println("vroom"); }
+}
+
+class Car extends Engine { }    // a car is not an engine`, cs: `class Engine
+{
+    public void Start() => Console.WriteLine("vroom");
+}
+
+class Car : Engine { }          // a car is not an engine` },
+        good: { py: `class Engine:
+    def start(self):
+        print("vroom")
+
+class Car:
+    def __init__(self, engine):
+        self.engine = engine    # a car has an engine
+
+    def start(self):
+        self.engine.start()`, java: `class Engine {
+    void start() { System.out.println("vroom"); }
+}
+
+class Car {
+    private final Engine engine;    // a car has an engine
+
+    Car(Engine engine) { this.engine = engine; }
+
+    void start() { engine.start(); }
+}`, cs: `class Engine
+{
+    public void Start() => Console.WriteLine("vroom");
+}
+
+class Car
+{
+    private readonly Engine engine;   // a car has an engine
+
+    public Car(Engine engine) => this.engine = engine;
+
+    public void Start() => engine.Start();
+}` } },
+      { why: { py: "A subclass's `__init__` replaces the parent's. Call `super().__init__(...)` so the parent sets up its part.",
+          java: "Copying the parent's logic into an override means two places to fix. Call `super` and add only what's different.",
+          cs: "Copying the parent's logic into an override means two places to fix. Call `base` and add only what's different." },
+        bad: { py: `class Animal:
+    def __init__(self, name):
+        self.name = name
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        self.breed = breed      # self.name is never set`, java: `class Animal {
+    String name = "Rex";
+    String describe() { return "Name: " + name; }
+}
+
+class Dog extends Animal {
+    @Override   // copies the parent's logic
+    String describe() { return "Name: " + name + ", barks"; }
+}`, cs: `class Animal
+{
+    public string Name = "Rex";
+    public virtual string Describe() => "Name: " + Name;
+}
+
+class Dog : Animal
+{
+    // copies the parent's logic
+    public override string Describe() => "Name: " + Name + ", barks";
+}` },
+        good: { py: `class Animal:
+    def __init__(self, name):
+        self.name = name
+
+class Dog(Animal):
+    def __init__(self, name, breed):
+        super().__init__(name)  # the parent sets self.name
+        self.breed = breed`, java: `class Animal {
+    String name = "Rex";
+    String describe() { return "Name: " + name; }
+}
+
+class Dog extends Animal {
+    @Override
+    String describe() { return super.describe() + ", barks"; }
+}`, cs: `class Animal
+{
+    public string Name = "Rex";
+    public virtual string Describe() => "Name: " + Name;
+}
+
+class Dog : Animal
+{
+    public override string Describe() => base.Describe() + ", barks";
+}` } },
+      { why: "A subclass must work wherever its parent does (Liskov). A Square that changes its height when you set its width breaks code written for Rectangle. Make them siblings instead.",
+        bad: { py: `class Rectangle:
+    def __init__(self, w, h):
+        self.w, self.h = w, h
+
+    def set_width(self, w):
+        self.w = w
+
+class Square(Rectangle):
+    def set_width(self, w):
+        self.w = self.h = w     # surprises code written for Rectangle`, java: `class Rectangle {
+    int w, h;
+    void setWidth(int w) { this.w = w; }
+}
+
+class Square extends Rectangle {
+    @Override   // surprises code written for Rectangle
+    void setWidth(int w) { this.w = this.h = w; }
+}`, cs: `class Rectangle
+{
+    public int W, H;
+    public virtual void SetWidth(int w) => W = w;
+}
+
+class Square : Rectangle
+{
+    // surprises code written for Rectangle
+    public override void SetWidth(int w) => W = H = w;
+}` },
+        good: { py: `class Shape:
+    def area(self):
+        raise NotImplementedError
+
+class Rectangle(Shape):
+    def __init__(self, w, h):
+        self.w, self.h = w, h
+
+    def area(self):
+        return self.w * self.h
+
+class Square(Shape):
+    def __init__(self, side):
+        self.side = side
+
+    def area(self):
+        return self.side ** 2`, java: `interface Shape { int area(); }
+
+record Rectangle(int w, int h) implements Shape {
+    public int area() { return w * h; }
+}
+
+record Square(int side) implements Shape {
+    public int area() { return side * side; }
+}`, cs: `interface IShape { int Area(); }
+
+record Rectangle(int W, int H) : IShape
+{
+    public int Area() => W * H;
+}
+
+record Square(int Side) : IShape
+{
+    public int Area() => Side * Side;
+}` } },
+    ],
     interview: "If you say \"favour composition over inheritance\", give the reason: parts can be swapped and tested on their own, and the child isn't tied to the parent's internals.",
     quiz: [
       { id: "inh1", q: "Which relationship suggests composition rather than inheritance?",
@@ -1447,6 +2296,110 @@ record Square(double Side) : IShape { public double Area() => Side * Side; }`,
       { java: "Mixing up overloading (compile time, different parameters) and overriding (run time, same signature).",
         cs: "Mixing up overloading (compile time, different parameters) and overriding (run time, same signature)." },
     ],
+    practice: [
+      { why: "A chain of type checks must be edited for every new type. Give each type its own method, and the caller just calls it.",
+        bad: { py: `def area(shape):
+    if isinstance(shape, Circle):
+        return math.pi * shape.r ** 2
+    elif isinstance(shape, Square):
+        return shape.side ** 2
+    raise TypeError("unknown shape")`, java: `double area(Object shape) {
+    if (shape instanceof Circle c) return Math.PI * c.r * c.r;
+    if (shape instanceof Square s) return s.side * s.side;
+    throw new IllegalArgumentException("unknown shape");
+}`, cs: `double Area(object shape)
+{
+    if (shape is Circle c) return Math.PI * c.R * c.R;
+    if (shape is Square s) return s.Side * s.Side;
+    throw new ArgumentException("unknown shape");
+}` },
+        good: { py: `class Circle:
+    def __init__(self, r):
+        self.r = r
+
+    def area(self):
+        return math.pi * self.r ** 2
+
+class Square:
+    def __init__(self, side):
+        self.side = side
+
+    def area(self):
+        return self.side ** 2
+
+total = sum(s.area() for s in shapes)   # works for any shape`, java: `interface Shape { double area(); }
+
+record Circle(double r) implements Shape {
+    public double area() { return Math.PI * r * r; }
+}
+
+record Square(double side) implements Shape {
+    public double area() { return side * side; }
+}`, cs: `interface IShape { double Area(); }
+
+record Circle(double R) : IShape
+{
+    public double Area() => Math.PI * R * R;
+}
+
+record Square(double Side) : IShape
+{
+    public double Area() => Side * Side;
+}` } },
+      { why: "Branching on a type code means editing this function for every new option. Put each option's behaviour in its own object, so adding one is a new entry.",
+        bad: { py: `def shipping(method, weight):
+    if method == "standard":
+        return 5 + weight
+    elif method == "express":
+        return 15 + 2 * weight
+    raise ValueError(method)`, java: `double shipping(String method, double weight) {
+    switch (method) {
+        case "standard": return 5 + weight;
+        case "express": return 15 + 2 * weight;
+        default: throw new IllegalArgumentException(method);
+    }
+}`, cs: `double Shipping(string method, double weight) => method switch
+{
+    "standard" => 5 + weight,
+    "express" => 15 + 2 * weight,
+    _ => throw new ArgumentException(method),
+};` },
+        good: { py: `RATES = {
+    "standard": lambda w: 5 + w,
+    "express": lambda w: 15 + 2 * w,
+}
+
+def shipping(method, weight):
+    return RATES[method](weight)    # a new method is one new entry`, java: `enum Shipping {
+    STANDARD { double cost(double w) { return 5 + w; } },
+    EXPRESS { double cost(double w) { return 15 + 2 * w; } };
+
+    abstract double cost(double w);  // each option brings its own rule
+}`, cs: `interface IShipping { double Cost(double weight); }
+
+class Standard : IShipping { public double Cost(double w) => 5 + w; }
+class Express : IShipping { public double Cost(double w) => 15 + 2 * w; }
+// a new option is a new class` } },
+      { why: "Ask for the most general type you need. Then callers can pass any kind of collection, and you can change the concrete type later.",
+        bad: { py: `def print_all(names: list[str]) -> None:   # only lists, says the hint
+    for n in names:
+        print(n)`, java: `void printAll(ArrayList<String> names) {   // only ArrayLists
+    for (String n : names) System.out.println(n);
+}`, cs: `void PrintAll(List<string> names)          // only Lists
+{
+    foreach (var n in names) Console.WriteLine(n);
+}` },
+        good: { py: `from collections.abc import Iterable
+
+def print_all(names: Iterable[str]) -> None:   # lists, sets, tuples, generators
+    for n in names:
+        print(n)`, java: `void printAll(Collection<String> names) {   // any list, set or queue
+    for (String n : names) System.out.println(n);
+}`, cs: `void PrintAll(IEnumerable<string> names)    // any collection or sequence
+{
+    foreach (var n in names) Console.WriteLine(n);
+}` } },
+    ],
     interview: "In design rounds, a new payment method or vehicle type should be a new class implementing the interface, not another branch in the checkout code.",
     quiz: [
       { id: "pol1", langs: ["java", "cs"], q: "What's the difference between overloading and overriding?",
@@ -1529,6 +2482,97 @@ Console.WriteLine(nums.Max());                     // KISS: says what it means. 
       "Copy-pasted code where a bug fix reached only one copy.",
       "KISS doesn't mean sloppy: simple code still handles edge cases.",
       "YAGNI doesn't mean no design: keep code easy to extend, just don't build the extensions yet.",
+    ],
+    practice: [
+      { why: "DRY: the same check pasted twice means a fix can reach one copy and miss the other. Give it a name and call it from both places.",
+        bad: { py: `if not email or "@" not in email:
+    raise ValueError("bad email")
+if not backup_email or "@" not in backup_email:
+    raise ValueError("bad email")`, java: `if (email == null || !email.contains("@"))
+    throw new IllegalArgumentException("bad email");
+if (backupEmail == null || !backupEmail.contains("@"))
+    throw new IllegalArgumentException("bad email");`, cs: `if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+    throw new ArgumentException("bad email");
+if (string.IsNullOrEmpty(backupEmail) || !backupEmail.Contains('@'))
+    throw new ArgumentException("bad email");` },
+        good: { py: `def check_email(e):
+    if not e or "@" not in e:
+        raise ValueError(f"bad email: {e!r}")
+
+check_email(email)
+check_email(backup_email)`, java: `void checkEmail(String e) {
+    if (e == null || !e.contains("@"))
+        throw new IllegalArgumentException("bad email: " + e);
+}
+
+void checkBoth(String email, String backupEmail) {
+    checkEmail(email);
+    checkEmail(backupEmail);
+}`, cs: `void CheckEmail(string e)
+{
+    if (string.IsNullOrEmpty(e) || !e.Contains('@'))
+        throw new ArgumentException($"bad email: {e}");
+}
+
+void CheckBoth(string email, string backupEmail)
+{
+    CheckEmail(email);
+    CheckEmail(backupEmail);
+}` } },
+      { why: "KISS: the standard library already has it, tested and clear. A hand-written loop is more code to read and more room for bugs.",
+        bad: { py: `largest = nums[0]
+for x in nums[1:]:
+    if x > largest:
+        largest = x`, java: `int largest = nums.get(0);
+for (int x : nums) {
+    if (x > largest) largest = x;
+}`, cs: `int largest = nums[0];
+foreach (int x in nums)
+{
+    if (x > largest) largest = x;
+}` },
+        good: { py: `largest = max(nums)`, java: `int largest = Collections.max(nums);`, cs: `int largest = nums.Max();` } },
+      { why: "YAGNI: a factory and an interface for the one kind of greeter that exists is code to maintain for a future that may never come. Write the simple version; add the flexibility when a second case appears.",
+        bad: { py: `class Greeter:
+    def greet(self, name):
+        print(f"Hello, {name}")
+
+class GreeterFactory:              # only one kind of greeter exists
+    def create(self, kind="default"):
+        if kind == "default":
+            return Greeter()
+        raise NotImplementedError(kind)
+
+GreeterFactory().create().greet("Ana")`, java: `interface Greeter { void greet(String name); }
+
+class DefaultGreeter implements Greeter {
+    public void greet(String name) { System.out.println("Hello, " + name); }
+}
+
+class GreeterFactory {             // only one kind of greeter exists
+    Greeter create(String kind) {
+        if (kind.equals("default")) return new DefaultGreeter();
+        throw new UnsupportedOperationException(kind);
+    }
+}`, cs: `interface IGreeter { void Greet(string name); }
+
+class DefaultGreeter : IGreeter
+{
+    public void Greet(string name) => Console.WriteLine($"Hello, {name}");
+}
+
+class GreeterFactory               // only one kind of greeter exists
+{
+    public IGreeter Create(string kind) => kind == "default"
+        ? new DefaultGreeter()
+        : throw new NotSupportedException(kind);
+}` },
+        good: { py: `def greet(name):
+    print(f"Hello, {name}")
+
+greet("Ana")`, java: `void greet(String name) {
+    System.out.println("Hello, " + name);
+}`, cs: `void Greet(string name) => Console.WriteLine($"Hello, {name}");` } },
     ],
     interview: "Start with the simple brute force and say its complexity (KISS), then optimise. In design rounds, build what was asked; when the interviewer asks \"what if...\", show how your design extends.",
     quiz: [
@@ -1623,6 +2667,175 @@ class OrderService                                                     // S: ord
       "An interface for every class \"just in case\", with only ever one implementation (YAGNI).",
       "Reading single responsibility as \"one method per class\". It means one reason to change.",
     ],
+    practice: [
+      { why: "Single responsibility: totals and email delivery change for different reasons. Split them, so a new mail server doesn't touch the report maths.",
+        bad: { py: `class Report:
+    def __init__(self, sales):
+        self.sales = sales
+
+    def total(self):
+        return sum(self.sales)
+
+    def send_email(self, smtp, to):     # a second reason to change
+        smtp.send(to, f"Total: {self.total()}")`, java: `class Report {
+    private final List<Integer> sales;
+    Report(List<Integer> sales) { this.sales = sales; }
+
+    int total() { return sales.stream().mapToInt(Integer::intValue).sum(); }
+
+    void sendEmail(Smtp smtp, String to) {   // a second reason to change
+        smtp.send(to, "Total: " + total());
+    }
+}`, cs: `class Report
+{
+    private readonly List<int> sales;
+    public Report(List<int> sales) => this.sales = sales;
+
+    public int Total() => sales.Sum();
+
+    public void SendEmail(Smtp smtp, string to) =>   // a second reason to change
+        smtp.Send(to, $"Total: {Total()}");
+}` },
+        good: { py: `class Report:
+    def __init__(self, sales):
+        self.sales = sales
+
+    def total(self):
+        return sum(self.sales)
+
+class ReportMailer:
+    def __init__(self, smtp):
+        self.smtp = smtp
+
+    def send(self, report, to):
+        self.smtp.send(to, f"Total: {report.total()}")`, java: `class Report {
+    private final List<Integer> sales;
+    Report(List<Integer> sales) { this.sales = sales; }
+
+    int total() { return sales.stream().mapToInt(Integer::intValue).sum(); }
+}
+
+class ReportMailer {
+    private final Smtp smtp;
+    ReportMailer(Smtp smtp) { this.smtp = smtp; }
+
+    void send(Report report, String to) {
+        smtp.send(to, "Total: " + report.total());
+    }
+}`, cs: `class Report
+{
+    private readonly List<int> sales;
+    public Report(List<int> sales) => this.sales = sales;
+
+    public int Total() => sales.Sum();
+}
+
+class ReportMailer
+{
+    private readonly Smtp smtp;
+    public ReportMailer(Smtp smtp) => this.smtp = smtp;
+
+    public void Send(Report report, string to) =>
+        smtp.Send(to, $"Total: {report.Total()}");
+}` } },
+      { why: "Dependency inversion: a class that builds its own collaborators is welded to them. Pass them in (as an interface), and you can swap them, or use a fake in tests.",
+        bad: { py: `class OrderService:
+    def __init__(self):
+        self.mailer = SmtpMailer()      # welded to one mailer
+
+    def place(self, order):
+        self.mailer.send(order.email, "Thanks!")`, java: `class OrderService {
+    private final SmtpMailer mailer = new SmtpMailer();   // welded to one mailer
+
+    void place(Order order) { mailer.send(order.email(), "Thanks!"); }
+}`, cs: `class OrderService
+{
+    private readonly SmtpMailer mailer = new();   // welded to one mailer
+
+    public void Place(Order order) => mailer.Send(order.Email, "Thanks!");
+}` },
+        good: { py: `class OrderService:
+    def __init__(self, mailer):         # any object with send() works
+        self.mailer = mailer
+
+    def place(self, order):
+        self.mailer.send(order.email, "Thanks!")
+
+service = OrderService(FakeMailer())    # in a test`, java: `interface Mailer { void send(String to, String body); }
+
+class OrderService {
+    private final Mailer mailer;
+    OrderService(Mailer mailer) { this.mailer = mailer; }   // passed in
+
+    void place(Order order) { mailer.send(order.email(), "Thanks!"); }
+}`, cs: `interface IMailer { void Send(string to, string body); }
+
+class OrderService
+{
+    private readonly IMailer mailer;
+    public OrderService(IMailer mailer) => this.mailer = mailer;   // passed in
+
+    public void Place(Order order) => mailer.Send(order.Email, "Thanks!");
+}` } },
+      { why: "Interface segregation: a fat interface forces classes to implement methods that make no sense for them. Split it into small ones.",
+        bad: { py: `from abc import ABC, abstractmethod
+
+class Worker(ABC):
+    @abstractmethod
+    def work(self): ...
+
+    @abstractmethod
+    def eat(self): ...              # robots don't eat
+
+class Robot(Worker):
+    def work(self):
+        print("welding")
+
+    def eat(self):
+        raise NotImplementedError`, java: `interface Worker {
+    void work();
+    void eat();                     // robots don't eat
+}
+
+class Robot implements Worker {
+    public void work() { System.out.println("welding"); }
+    public void eat() { throw new UnsupportedOperationException(); }
+}`, cs: `interface IWorker
+{
+    void Work();
+    void Eat();                     // robots don't eat
+}
+
+class Robot : IWorker
+{
+    public void Work() => Console.WriteLine("welding");
+    public void Eat() => throw new NotSupportedException();
+}` },
+        good: { py: `from abc import ABC, abstractmethod
+
+class Workable(ABC):
+    @abstractmethod
+    def work(self): ...
+
+class Eater(ABC):
+    @abstractmethod
+    def eat(self): ...
+
+class Robot(Workable):              # only what applies
+    def work(self):
+        print("welding")`, java: `interface Workable { void work(); }
+interface Eater { void eat(); }
+
+class Robot implements Workable {   // only what applies
+    public void work() { System.out.println("welding"); }
+}`, cs: `interface IWorkable { void Work(); }
+interface IEater { void Eat(); }
+
+class Robot : IWorkable             // only what applies
+{
+    public void Work() => Console.WriteLine("welding");
+}` } },
+    ],
     interview: "In low-level design rounds, name the principle when you use it: \"I'm injecting the notifier so it's easy to swap and to fake in tests.\" That's dependency inversion in one sentence.",
     quiz: [
       { id: "sol1", q: "Adding a new notification channel means editing a big if/else inside `OrderService`. Which principle is broken?",
@@ -1705,6 +2918,119 @@ record Job(string Name, int Seconds);`,
         cs: "Boolean flag parameters (`Render(true, false)`). Two clearly named methods, or named arguments, read better." },
       "Logic that prints or writes files deep inside a calculation can't be tested without capturing output.",
       "Dead code and commented-out blocks left \"just in case\".",
+    ],
+    practice: [
+      { why: "Names are the cheapest documentation. Say what the thing is, so readers don't have to work it out from the code.",
+        bad: { py: `def calc(m, t):
+    r = []
+    for k, v in m.items():
+        if v > t:
+            r.append(k)
+    return r`, java: `List<String> calc(Map<String, Integer> m, int t) {
+    List<String> r = new ArrayList<>();
+    for (var e : m.entrySet())
+        if (e.getValue() > t) r.add(e.getKey());
+    return r;
+}`, cs: `List<string> Calc(Dictionary<string, int> m, int t)
+{
+    var r = new List<string>();
+    foreach (var (k, v) in m)
+        if (v > t) r.Add(k);
+    return r;
+}` },
+        good: { py: `def customers_over_limit(spend_by_customer, limit):
+    big_spenders = []
+    for customer, spend in spend_by_customer.items():
+        if spend > limit:
+            big_spenders.append(customer)
+    return big_spenders`, java: `List<String> customersOverLimit(Map<String, Integer> spendByCustomer, int limit) {
+    List<String> bigSpenders = new ArrayList<>();
+    for (var entry : spendByCustomer.entrySet())
+        if (entry.getValue() > limit) bigSpenders.add(entry.getKey());
+    return bigSpenders;
+}`, cs: `List<string> CustomersOverLimit(Dictionary<string, int> spendByCustomer, int limit)
+{
+    var bigSpenders = new List<string>();
+    foreach (var (customer, spend) in spendByCustomer)
+        if (spend > limit) bigSpenders.Add(customer);
+    return bigSpenders;
+}` } },
+      { why: "A calculation that also writes a file can't be tested or reused without that side effect. Keep the calculation pure, and do the input/output separately.",
+        bad: { py: `def invoice_total(items):
+    total = sum(price * qty for price, qty in items)
+    with open("invoice.txt", "w") as f:    # hidden side effect
+        f.write(str(total))
+    return total`, java: `double invoiceTotal(List<Item> items) throws IOException {
+    double total = 0;
+    for (Item i : items) total += i.price() * i.qty();
+    // hidden side effect
+    Files.writeString(Path.of("invoice.txt"), String.valueOf(total));
+    return total;
+}`, cs: `double InvoiceTotal(List<Item> items)
+{
+    double total = items.Sum(i => i.Price * i.Qty);
+    File.WriteAllText("invoice.txt", total.ToString());   // hidden side effect
+    return total;
+}` },
+        good: { py: `def invoice_total(items):                   # pure: same input, same output
+    return sum(price * qty for price, qty in items)
+
+def save_invoice(path, total):
+    with open(path, "w") as f:
+        f.write(str(total))`, java: `double invoiceTotal(List<Item> items) {     // pure: same input, same output
+    double total = 0;
+    for (Item i : items) total += i.price() * i.qty();
+    return total;
+}
+
+void saveInvoice(Path path, double total) throws IOException {
+    Files.writeString(path, String.valueOf(total));
+}`, cs: `double InvoiceTotal(List<Item> items) =>     // pure: same input, same output
+    items.Sum(i => i.Price * i.Qty);
+
+void SaveInvoice(string path, double total) =>
+    File.WriteAllText(path, total.ToString());` } },
+      { why: "A `true` or `false` argument says nothing at the call site. Two clearly named functions (or a named argument) read on their own.",
+        bad: { py: `def render(doc, as_pdf):
+    return to_pdf(doc) if as_pdf else to_html(doc)
+
+render(doc, True)                       # True what?`, java: `String render(Doc doc, boolean asPdf) {
+    return asPdf ? toPdf(doc) : toHtml(doc);
+}
+// render(doc, true): true what?`, cs: `string Render(Doc doc, bool asPdf) => asPdf ? ToPdf(doc) : ToHtml(doc);
+// Render(doc, true): true what?` },
+        good: { py: `def render_pdf(doc):
+    return to_pdf(doc)
+
+def render_html(doc):
+    return to_html(doc)
+
+render_pdf(doc)`, java: `String renderPdf(Doc doc) { return toPdf(doc); }
+String renderHtml(Doc doc) { return toHtml(doc); }
+// renderPdf(doc) says what it does`, cs: `string RenderPdf(Doc doc) => ToPdf(doc);
+string RenderHtml(Doc doc) => ToHtml(doc);
+// RenderPdf(doc) says what it does` } },
+      { why: "Commented-out code and leftover debug prints are noise. Version control remembers old versions; delete them.",
+        bad: { py: `def area(w, h):
+    # old version:
+    # return w * h * 1.0
+    print("debug", w, h)
+    return w * h`, java: `int area(int w, int h) {
+    // old version:
+    // return (int) (w * h * 1.0);
+    System.out.println("debug " + w + " " + h);
+    return w * h;
+}`, cs: `int Area(int w, int h)
+{
+    // old version:
+    // return (int)(w * h * 1.0);
+    Console.WriteLine($"debug {w} {h}");
+    return w * h;
+}` },
+        good: { py: `def area(w, h):
+    return w * h`, java: `int area(int w, int h) {
+    return w * h;
+}`, cs: `int Area(int w, int h) => w * h;` } },
     ],
     interview: "Readability is graded. Rename `i, j` to `left, right` in two-pointer code, pull out helpers, and delete debugging prints before you say \"done\".",
     quiz: [
@@ -1795,6 +3121,115 @@ Console.WriteLine($"{Average(new[] { 2, 4 })} {SafeInt("42")} {SafeInt("4x2")}")
         cs: "Returning `null` silently, so the `NullReferenceException` happens far away from the cause." },
       "Using exceptions for normal flow inside a hot loop: they're slow and hide intent.",
       "Never testing the empty input.",
+    ],
+    practice: [
+      { why: "Catching everything and ignoring it hides real bugs. Catch only the errors you expect, and handle each one on purpose.",
+        bad: { py: `port = 0
+try:
+    port = int(config["port"])
+except Exception:
+    pass                    # hides a missing key, a typo, anything`, java: `int port = 0;
+try {
+    port = Integer.parseInt(config.get("port"));
+} catch (Exception e) {
+    // ignored: hides a missing key, a typo, anything
+}`, cs: `int port = 0;
+try
+{
+    port = int.Parse(config["port"]);
+}
+catch { }                   // hides a missing key, a typo, anything` },
+        good: { py: `try:
+    port = int(config["port"])
+except KeyError:
+    port = DEFAULT_PORT     # missing is fine: use the default
+except ValueError:
+    raise ValueError(f"port must be a number, got {config['port']!r}")`, java: `String raw = config.get("port");
+int port = DEFAULT_PORT;    // missing is fine: use the default
+if (raw != null) {
+    try {
+        port = Integer.parseInt(raw);
+    } catch (NumberFormatException e) {
+        throw new IllegalArgumentException("port must be a number, got " + raw, e);
+    }
+}`, cs: `int port = DefaultPort;     // missing is fine: use the default
+if (config.TryGetValue("port", out var raw) && !int.TryParse(raw, out port))
+    throw new ArgumentException($"port must be a number, got {raw}");` } },
+      { why: { py: "Falling off the end returns `None`, and the crash happens later, far from the cause. Raise a clear error where the problem is.",
+          java: "Returning `null` moves the crash somewhere else. `Optional` makes \"not found\" part of the type, so the caller has to deal with it.",
+          cs: "Returning `null` moves the crash somewhere else. The Try pattern makes \"not found\" an explicit result the caller has to check." },
+        bad: { py: `def find_user(users, user_id):
+    for u in users:
+        if u.id == user_id:
+            return u
+    # falls off the end: returns None`, java: `User findUser(List<User> users, int id) {
+    for (User u : users)
+        if (u.id() == id) return u;
+    return null;            // the NullPointerException comes later
+}`, cs: `User FindUser(List<User> users, int id)
+{
+    foreach (var u in users)
+        if (u.Id == id) return u;
+    return null;            // the NullReferenceException comes later
+}` },
+        good: { py: `def find_user(users, user_id):
+    for u in users:
+        if u.id == user_id:
+            return u
+    raise KeyError(f"no user with id {user_id}")`, java: `Optional<User> findUser(List<User> users, int id) {
+    for (User u : users)
+        if (u.id() == id) return Optional.of(u);
+    return Optional.empty();    // the caller must decide what missing means
+}`, cs: `bool TryFindUser(List<User> users, int id, out User user)
+{
+    user = users.Find(u => u.Id == id);
+    return user != null;        // if (TryFindUser(...)) makes the check explicit
+}` } },
+      { why: "Check inputs where they enter, with a message that says what was wrong. Bad data caught early is easy to trace; bad data stored is not.",
+        bad: { py: `def set_age(person, age):
+    person.age = age        # accepts -5, 999 or "ten"`, java: `void setAge(Person person, int age) {
+    person.age = age;       // accepts -5 or 999
+}`, cs: `void SetAge(Person person, int age)
+{
+    person.Age = age;       // accepts -5 or 999
+}` },
+        good: { py: `def set_age(person, age):
+    if not isinstance(age, int) or not 0 <= age <= 150:
+        raise ValueError(f"age must be 0-150, got {age!r}")
+    person.age = age`, java: `void setAge(Person person, int age) {
+    if (age < 0 || age > 150)
+        throw new IllegalArgumentException("age must be 0-150, got " + age);
+    person.age = age;
+}`, cs: `void SetAge(Person person, int age)
+{
+    if (age < 0 || age > 150)
+        throw new ArgumentOutOfRangeException(
+            nameof(age), age, "age must be 0-150");
+    person.Age = age;
+}` } },
+      { why: { java: "Exceptions are for the unexpected. A missing map entry is a normal case: check for it instead of catching the crash.",
+          cs: "Exceptions are slow and hide intent when failure is a normal case. `TryParse` reports it as a plain `bool`." },
+        bad: { java: `int nameLength(Map<String, String> names, String id) {
+    try {
+        return names.get(id).length();
+    } catch (NullPointerException e) {   // missing is normal, not exceptional
+        return 0;
+    }
+}`, cs: `int? ParseOrNull(string s)
+{
+    try
+    {
+        return int.Parse(s);
+    }
+    catch (FormatException)       // bad input is normal here, not exceptional
+    {
+        return null;
+    }
+}` },
+        good: { java: `int nameLength(Map<String, String> names, String id) {
+    String name = names.get(id);
+    return name == null ? 0 : name.length();
+}`, cs: `int? ParseOrNull(string s) => int.TryParse(s, out int n) ? n : null;` } },
     ],
     interview: "Before coding, list the edge cases out loud; after coding, walk one through by hand. Interviewers notice, and it's where a QA background shines.",
     quiz: [

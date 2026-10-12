@@ -26,16 +26,16 @@ const LESSONS = [
       <li><code>**</code> is power: <code>2 ** 10</code> is <code>1024</code>.</li></ul>
       <h3>Converting between types</h3>
       <p><code>int("42")</code> turns text into a number, <code>str(42)</code> turns a number into text, <code>float(3)</code> gives <code>3.0</code>. You need this whenever you mix them: <code>"Age: " + str(36)</code>.</p>
-      <h3>Worked example: sharing a pizza</h3>
-      <p>10 slices, 3 people. How many whole slices does each person get, and how many are left over?</p>
-      <ol><li><code>10 / 3</code> is <code>3.333...</code>: true, but you can't hand out a third of a slice.</li>
-      <li><code>10 // 3</code> is <code>3</code>: each person gets 3 whole slices.</li>
-      <li><code>10 % 3</code> is <code>1</code>: one slice is left over.</li>
-      <li>Check: 3 people &times; 3 slices + 1 left over = 10. The <code>//</code> and <code>%</code> pair always fits back together this way.</li></ol>`,
-    example: `slices, people = 10, 3
-print(slices / people)    # 3.3333333333333335 (always a float)
-print(slices // people)   # 3  whole slices each
-print(slices % people)    # 1  left over
+      <h3>Worked example: minutes into hours and minutes</h3>
+      <p>A film is 135 minutes long. How many whole hours is that, and how many minutes are left over?</p>
+      <ol><li><code>135 / 60</code> is <code>2.25</code>: true, but it's not how you'd say it.</li>
+      <li><code>135 // 60</code> is <code>2</code>: two whole hours.</li>
+      <li><code>135 % 60</code> is <code>15</code>: 15 minutes left over.</li>
+      <li>Check: 2 &times; 60 + 15 = 135. The <code>//</code> and <code>%</code> pair always fits back together this way.</li></ol>`,
+    example: `minutes = 135
+print(minutes / 60)       # 2.25 (always a float)
+print(minutes // 60)      # 2  whole hours
+print(minutes % 60)       # 15 minutes left over
 print(2 ** 10)            # 1024
 
 print(type(3), type(3.0), type("3"), type(True), type(None))
@@ -170,22 +170,19 @@ assert sign(0) == "zero"`,
         return "negative"
     else:
         return "zero"` },
-      { key: "grade", prompt: "Write grade(score): \"A\" for 90 and up, \"B\" for 80 and up, \"C\" for 70 and up, otherwise \"F\".",
-        example: `grade(85) returns "B"\ngrade(90) returns "A"`,
-        hint: "Check from the highest grade down, as in the worked example. Watch the boundaries: 90 is an A, so use `>=`.",
-        starter: "def grade(score):\n    pass\n",
-        tests: `assert grade(95) == "A" and grade(90) == "A", "90 and above is an A"
-assert grade(85) == "B" and grade(80) == "B"
-assert grade(70) == "C"
-assert grade(69) == "F" and grade(0) == "F"`,
-        solution: `def grade(score):
-    if score >= 90:
-        return "A"
-    elif score >= 80:
-        return "B"
-    elif score >= 70:
-        return "C"
-    return "F"` },
+      { key: "discount", prompt: "A shop's discount depends on how much you spend: 20 (percent) for 100 or more, 10 for 50 or more, otherwise 0. Write discount(total) that returns the percent.",
+        example: "discount(120) returns 20\ndiscount(50) returns 10\ndiscount(49.99) returns 0",
+        hint: "Same shape as the grade example, with different thresholds and three outcomes. Check the biggest threshold first, and use `>=` so that exactly 50 and exactly 100 count.",
+        starter: "def discount(total):\n    pass\n",
+        tests: `assert discount(120) == 20 and discount(100) == 20, "100 and above: 20"
+assert discount(99) == 10 and discount(50) == 10, "50 up to 99.99: 10"
+assert discount(49.99) == 0 and discount(0) == 0`,
+        solution: `def discount(total):
+    if total >= 100:
+        return 20
+    elif total >= 50:
+        return 10
+    return 0` },
       { key: "in_range", prompt: "Write in_range(x, lo, hi) that returns True if x is between lo and hi, including both ends.",
         example: "in_range(5, 1, 10) returns True\nin_range(10, 1, 10) returns True\nin_range(11, 1, 10) returns False",
         hint: "A chained comparison does it in one line: `lo <= x <= hi`.",
@@ -195,22 +192,23 @@ assert in_range(1, 1, 10) is True and in_range(10, 1, 10) is True, "both ends co
 assert in_range(11, 1, 10) is False and in_range(0, 1, 10) is False`,
         solution: `def in_range(x, lo, hi):
     return lo <= x <= hi` },
-      { key: "fizz_one", prompt: "Write fizz_one(n) for a single number: \"FizzBuzz\" if n is a multiple of both 3 and 5, \"Fizz\" if only of 3, \"Buzz\" if only of 5, otherwise the number as text.",
-        example: `fizz_one(9) returns "Fizz"\nfizz_one(10) returns "Buzz"\nfizz_one(15) returns "FizzBuzz"\nfizz_one(7) returns "7"`,
-        hint: "\"Multiple of 3\" means `n % 3 == 0`. Check the both-3-and-5 case FIRST, otherwise 15 would stop at \"Fizz\". Use `str(n)` for the last case.",
-        starter: "def fizz_one(n):\n    pass\n",
-        tests: `assert fizz_one(15) == "FizzBuzz", "check the 3-and-5 case first"
-assert fizz_one(9) == "Fizz"
-assert fizz_one(10) == "Buzz"
-assert fizz_one(7) == "7", "other numbers come back as text: str(n)"`,
-        solution: `def fizz_one(n):
-    if n % 3 == 0 and n % 5 == 0:
-        return "FizzBuzz"
-    elif n % 3 == 0:
-        return "Fizz"
-    elif n % 5 == 0:
-        return "Buzz"
-    return str(n)` },
+      { key: "shipping", prompt: "Write shipping_cost(weight) for a parcel's weight in kg: 5 for up to 1 kg, 12 for up to 5 kg, 30 for up to 20 kg. Anything heavier can't be shipped: return None.",
+        example: "shipping_cost(0.5) returns 5\nshipping_cost(1) returns 5\nshipping_cost(3) returns 12\nshipping_cost(25) returns None",
+        hint: "This time it's easiest to start from the lightest band: `if weight <= 1:` then `elif weight <= 5:` and so on, with `else: return None` at the end. \"Up to 1 kg\" includes 1, so use `<=`.",
+        starter: "def shipping_cost(weight):\n    pass\n",
+        tests: `assert shipping_cost(0.5) == 5 and shipping_cost(1) == 5, "up to and including 1 kg: 5"
+assert shipping_cost(3) == 12 and shipping_cost(5) == 12
+assert shipping_cost(20) == 30
+assert shipping_cost(25) is None, "over 20 kg: None"`,
+        solution: `def shipping_cost(weight):
+    if weight <= 1:
+        return 5
+    elif weight <= 5:
+        return 12
+    elif weight <= 20:
+        return 30
+    else:
+        return None` },
     ],
   },
   {
@@ -238,10 +236,11 @@ for n in range(1, 7):
         evens.append(n)
 print(evens)              # [2, 4, 6]
 
-n = 3
-while n > 0:
-    print("countdown", n)
-    n = n - 1
+steps, value = 0, 1
+while value < 100:        # keep doubling until we pass 100
+    value = value * 2
+    steps = steps + 1
+print(steps, value)       # 7 128
 
 for i, name in enumerate(["Ada", "Sam"], start=1):
     print(i, name)        # 1 Ada / 2 Sam
@@ -261,13 +260,13 @@ for name, score in zip(["Ada", "Sam"], [90, 75]):
         good: `for name, score in zip(names, scores):
     print(name, score)` },
       { why: "A while loop whose condition never changes runs forever. Make sure the body moves towards the end.",
-        bad: `n = 3
-while n > 0:
-    print(n)              # n never changes: endless`,
-        good: `n = 3
-while n > 0:
-    print(n)
-    n -= 1                # moves towards the end` },
+        bad: `tries = 0
+while tries < 3:
+    print("trying")       # tries never changes: endless`,
+        good: `tries = 0
+while tries < 3:
+    print("trying")
+    tries += 1            # moves towards the end` },
     ],
     exercises: [
       { key: "count_up", prompt: "Write count_up(n) that returns a list of the numbers from 1 to n.",
@@ -324,7 +323,7 @@ assert countdown(0) == []`,
     return result` },
       { key: "fizzbuzz", prompt: "Write fizzbuzz(n) that returns a list of strings for 1 to n: \"Fizz\" for multiples of 3, \"Buzz\" for multiples of 5, \"FizzBuzz\" for both, otherwise the number as a string.",
         example: `fizzbuzz(5) returns ["1", "2", "Fizz", "4", "Buzz"]`,
-        hint: "Loop `for i in range(1, n + 1)` and append one string per number. The if / elif chain is the same as in fizz_one from the Conditionals lesson: check 3-and-5 first.",
+        hint: "Loop `for i in range(1, n + 1)` and append one string per number, chosen with if / elif / else. \"Multiple of 3\" means `i % 3 == 0`. Check the both-3-and-5 case FIRST (`i % 15 == 0`), or 15 would stop at \"Fizz\". Use `str(i)` for other numbers.",
         starter: "def fizzbuzz(n):\n    pass\n",
         tests: `assert fizzbuzz(5) == ['1','2','Fizz','4','Buzz'], fizzbuzz(5)
 assert fizzbuzz(15)[-1] == 'FizzBuzz'
@@ -352,12 +351,12 @@ assert fizzbuzz(0) == []`,
       <h3>Why it's useful</h3>
       <p>"Is this list empty?" becomes <code>if not items:</code>, and "do we have a name?" becomes <code>if name:</code>. Both read like plain English and work for any kind of collection.</p>
       <h3>and / or return a value</h3>
-      <p><code>a or b</code> gives back <code>a</code> if it's truthy, otherwise <code>b</code>. So <code>name or "Anonymous"</code> means "the name, or Anonymous if there isn't one".</p>
+      <p><code>a or b</code> gives back <code>a</code> if it's truthy, otherwise <code>b</code>. So <code>colour or "blue"</code> means "the colour, or blue if there isn't one".</p>
       <h3>Worked example</h3>
-      <p>What does <code>display_name("")</code> return, for <code>return name or "Anonymous"</code>?</p>
-      <ol><li><code>name</code> is <code>""</code>, the empty string, which is falsy.</li>
-      <li><code>or</code> moves on to the right-hand side and returns <code>"Anonymous"</code>.</li>
-      <li>For <code>display_name("Ada")</code>, <code>"Ada"</code> is truthy, so <code>or</code> returns it straight away.</li></ol>
+      <p>A greeting that falls back to "friend" when no nickname is given: <code>"Hi, " + (nickname or "friend")</code>. What happens when <code>nickname</code> is <code>""</code>?</p>
+      <ol><li><code>nickname</code> is <code>""</code>, the empty string, which is falsy.</li>
+      <li><code>or</code> moves on to the right-hand side and gives <code>"friend"</code>, so the result is <code>"Hi, friend"</code>.</li>
+      <li>When <code>nickname</code> is <code>"Sam"</code>, it's truthy, so <code>or</code> gives it straight away: <code>"Hi, Sam"</code>.</li></ol>
       <p>One trap: <code>0</code> is falsy too. If 0 is a valid value (a score, a count), check <code>if x is None:</code> instead of <code>if not x:</code>.</p>`,
     example: `for v in [0, 1, "", "0", [], [0], None, {}]:
     print(repr(v), bool(v))
@@ -366,8 +365,8 @@ items = []
 if not items:
     print("nothing to do")
 
-name = ""
-print(name or "Anonymous")   # Anonymous
+nickname = ""
+print("Hi, " + (nickname or "friend"))   # Hi, friend
 score = 0
 print(score or "no score")   # no score: a trap, 0 is a real score
 print("no score" if score is None else score)   # 0
@@ -435,44 +434,44 @@ assert count_truthy(["0", " "]) == 2, "non-empty strings are truthy, even '0'"`,
     ],
   },
   {
-    id: "functions", title: "5. Functions",
+    id: "functions", title: "5. Functions: parameters and return values",
     body: `<p>A <b>function</b> is a named block of code you can run whenever you need it. Functions let you write a piece of logic once and reuse it, and give it a name that says what it does.</p>
       <h3>Defining and calling</h3>
-      <pre>def rect_area(width, height):
-    return width * height
+      <pre>def perimeter(width, height):
+    return 2 * (width + height)
 
-print(rect_area(3, 4))   # 12</pre>
+print(perimeter(3, 4))   # 14</pre>
       <ul><li><code>def</code> starts the definition; <code>width</code> and <code>height</code> are the <b>parameters</b>: names for the inputs.</li>
       <li>The indented lines are the <b>body</b>. Defining the function doesn't run it.</li>
-      <li><code>rect_area(3, 4)</code> <b>calls</b> it. The values 3 and 4 are the <b>arguments</b>; they're matched to the parameters in order.</li>
+      <li><code>perimeter(3, 4)</code> <b>calls</b> it. The values 3 and 4 are the <b>arguments</b>; they're matched to the parameters in order.</li>
       <li><code>return</code> sends a value back to the caller and ends the function. A function with no <code>return</code> gives back <code>None</code>.</li></ul>
       <h3>What a call does, step by step</h3>
-      <p>For <code>area = rect_area(3, 4)</code>:</p>
+      <p>For <code>p = perimeter(3, 4)</code>:</p>
       <ol><li>Python creates fresh variables for this call: <code>width = 3</code>, <code>height = 4</code>. They only exist while the function runs (they're <i>local</i> to it).</li>
-      <li>It runs the body: <code>3 * 4</code> is 12, and <code>return</code> sends 12 back.</li>
-      <li>The call is replaced by its result, so the line becomes <code>area = 12</code>.</li></ol>
+      <li>It runs the body: <code>2 * (3 + 4)</code> is 14, and <code>return</code> sends 14 back.</li>
+      <li>The call is replaced by its result, so the line becomes <code>p = 14</code>.</li></ol>
       <h3>Default values and keyword arguments</h3>
-      <p>A parameter can have a default: <code>def greet(name, greeting="Hello"):</code>. Leave it out and the default is used; pass it to override. You can also name arguments in the call, <code>greet("Sam", greeting="Hi")</code>, which makes calls easier to read.</p>
+      <p>A parameter can have a default: <code>def raise_to(base, exponent=2):</code>. Leave it out and the default is used (<code>raise_to(5)</code> is 25); pass it to override. You can also name arguments in the call, <code>raise_to(2, exponent=10)</code>, which makes calls easier to read.</p>
       <h3>Returning more than one value</h3>
-      <p><code>return lo, hi</code> returns both values together (as a <i>tuple</i>, an unchangeable pair). The caller can unpack them: <code>lo, hi = min_max(nums)</code>.</p>
+      <p><code>return a // b, a % b</code> returns both values together (as a <i>tuple</i>, an unchangeable pair). The caller can unpack them: <code>hours, minutes = divide(135, 60)</code>.</p>
       <p>The <button class="link-btn inline-link" data-ref="py:functions-more">Functions: going further</button> lesson, later on, covers <code>*args</code>, closures and scope.</p>`,
-    example: `def rect_area(width, height):
-    return width * height
+    example: `def perimeter(width, height):
+    return 2 * (width + height)
 
-area = rect_area(3, 4)
-print(area)                       # 12
+p = perimeter(3, 4)
+print(p)                          # 14
 
-def greet(name, greeting="Hello"):
-    return f"{greeting}, {name}!"
+def raise_to(base, exponent=2):
+    return base ** exponent
 
-print(greet("Sam"))               # Hello, Sam!
-print(greet("Sam", greeting="Hi"))  # Hi, Sam!
+print(raise_to(5))                # 25
+print(raise_to(2, exponent=10))   # 1024
 
-def min_max(nums):
-    return min(nums), max(nums)
+def divide(a, b):
+    return a // b, a % b
 
-lo, hi = min_max([4, 1, 9])
-print(lo, hi)                     # 1 9
+hours, minutes = divide(135, 60)
+print(hours, minutes)             # 2 15
 
 def no_return():
     x = 1
@@ -480,10 +479,10 @@ print(no_return())                # None
 `,
     practice: [
       { why: "A function that returns its answer can be tested, stored and reused; one that prints it can only be read by a person.",
-        bad: `def rect_area(w, h):
-    print(w * h)`,
-        good: `def rect_area(w, h):
-    return w * h` },
+        bad: `def perimeter(w, h):
+    print(2 * (w + h))`,
+        good: `def perimeter(w, h):
+    return 2 * (w + h)` },
       { why: "A function that changes a global variable is hard to follow and test. Take inputs as parameters and return the result.",
         bad: `total = 0
 
@@ -496,14 +495,15 @@ def add_price(p):
 total = add_price(total, 5)` },
     ],
     exercises: [
-      { key: "rect_area", prompt: "Write rect_area(width, height) that returns the area of a rectangle.",
-        example: "rect_area(3, 4) returns 12",
-        hint: "Area is width times height: `return width * height`.",
-        starter: "def rect_area(width, height):\n    pass\n",
-        tests: `assert rect_area(3, 4) == 12
-assert rect_area(5, 0) == 0`,
-        solution: `def rect_area(width, height):
-    return width * height` },
+      { key: "triangle", prompt: "Write triangle_area(base, height) that returns the area of a triangle: half of base times height.",
+        example: "triangle_area(4, 3) returns 6.0",
+        hint: "Multiply the two parameters, then divide by 2: `return base * height / 2`.",
+        starter: "def triangle_area(base, height):\n    pass\n",
+        tests: `assert triangle_area(4, 3) == 6
+assert triangle_area(5, 1) == 2.5
+assert triangle_area(0, 9) == 0`,
+        solution: `def triangle_area(base, height):
+    return base * height / 2` },
       { key: "greet", prompt: "Write greet(name, greeting=\"Hello\") that returns \"<greeting>, <name>!\". The greeting is optional and defaults to Hello.",
         example: `greet("Sam") returns "Hello, Sam!"\ngreet("Sam", "Hi") returns "Hi, Sam!"`,
         hint: "The default is already in the starter's signature. Join the pieces: `greeting + \", \" + name + \"!\"` (or an f-string).",
@@ -545,23 +545,23 @@ assert min_max([-3, -8, -1]) == (-8, -1)`,
       <h3>Building strings</h3>
       <p>Because strings can't change, <code>s = s + c</code> inside a loop makes a brand-new string each time, copying everything so far. For long text that gets slow: the work grows with the <i>square</i> of the length, which is written <b>O(n²)</b>. (O-notation describes how work grows with input size; the ${BIGO_LINK} explains it.) The fast way is to collect pieces in a list and join them once: <code>"".join(parts)</code>.</p>
       <h3>The everyday tools</h3>
+      <p>A <b>method</b> is a function that belongs to a value and is called with a dot: <code>s.upper()</code> runs <code>upper</code> on the string <code>s</code>.</p>
       <ul><li>Indexing and slicing: <code>s[0]</code>, <code>s[-1]</code>, <code>s[a:b]</code> (from a up to, not including, b), <code>s[::-1]</code> (reversed).</li>
       <li>Methods: <code>split, join, strip, lower, upper, startswith, find, replace, isalnum, isdigit</code>.</li>
-      <li>f-strings put values into text: <code>f"{name}: {value:.2f}"</code>.</li>
+      <li>f-strings put values into text: <code>f"{name}: {value}"</code>. After a colon you can say how to show it: <code>{value:.2f}</code> shows 2 decimal places.</li>
       <li><code>ord('a')</code> is the character's code (97); <code>chr(97)</code> turns it back into <code>'a'</code>.</li></ul>
-      <h3>Worked example: initials</h3>
-      <p>To turn <code>"ada lovelace"</code> into <code>"AL"</code>:</p>
-      <ol><li><code>name.split()</code> splits on spaces: <code>["ada", "lovelace"]</code>.</li>
-      <li>Loop over the words. For each one, <code>word[0]</code> is its first letter and <code>.upper()</code> makes it a capital; append it to a list, <code>letters</code>.</li>
-      <li><code>"".join(letters)</code> glues the letters together with nothing in between: <code>"AL"</code>.</li></ol>`,
+      <h3>Worked example: a web address from a title</h3>
+      <p>To turn <code>"Hello Big World"</code> into <code>"hello-big-world"</code>:</p>
+      <ol><li><code>title.lower()</code> gives <code>"hello big world"</code>.</li>
+      <li><code>.split()</code> splits it on spaces: <code>["hello", "big", "world"]</code>.</li>
+      <li><code>"-".join(words)</code> glues the words back together with a dash between each pair: <code>"hello-big-world"</code>.</li></ol>`,
     example: `s = "Hello, World"
 print(s[::-1], s.lower().split(", "), s.find("World"))
 print("-".join(["a", "b", "c"]), f"{3.14159:.2f}")
 
-letters = []
-for word in "ada lovelace".split():
-    letters.append(word[0].upper())
-print("".join(letters))   # AL
+title = "Hello Big World"
+words = title.lower().split()
+print("-".join(words))    # hello-big-world
 `,
     practice: [
       { why: "`in` checks for a substring directly; `find` returns a position, and comparing it with -1 is easy to get wrong.",
@@ -590,7 +590,7 @@ assert shout("") == "!"`,
     return s.upper() + "!"` },
       { key: "initials", prompt: "Write initials(name) that returns the capitalised first letter of each word.",
         example: `initials("ada lovelace") returns "AL"`,
-        hint: "Follow the worked example: `split()` into words, append `word[0].upper()` for each one to a list, then join the list with `\"\".join(letters)`.",
+        hint: "Split the name into words, loop over them, and append `word[0].upper()` (the first letter, as a capital) to a list. Then join the list with nothing in between: `\"\".join(letters)`.",
         starter: "def initials(name):\n    pass\n",
         tests: `assert initials("ada lovelace") == "AL"
 assert initials("Grace Brewster Hopper") == "GBH"
@@ -625,24 +625,23 @@ assert reverse_words('one') == 'one'`,
     ],
   },
   {
-    id: "lists", title: "7. Lists, tuples & slicing",
+    id: "lists", title: "7. Lists, tuples and slicing",
     body: `<p>A list is an ordered collection you can change. Under the hood it's a <b>dynamic array</b>: the items sit side by side in memory, so jumping to any position is instant.</p>
       <h3>What's fast and what's slow</h3>
       <p>In O-notation (see the ${BIGO_LINK}): <b>O(1)</b> means "takes the same time however long the list is"; <b>O(n)</b> means "grows in step with the length".</p>
       <ul><li>Fast, O(1): <code>a[i]</code>, <code>a.append(x)</code>, <code>a.pop()</code> from the end.</li>
-      <li>Slow, O(n): <code>a.insert(0, x)</code> and <code>a.pop(0)</code> (every other item shifts along), and <code>x in a</code> (checks items one by one). For a queue, use <code>collections.deque</code>.</li></ul>
+      <li>Slow, O(n): <code>a.insert(0, x)</code> and <code>a.pop(0)</code> (every other item shifts along), and <code>x in a</code> (checks items one by one). For a queue, use <code>collections.deque</code> (a tool from Python's standard library, covered in a later lesson).</li></ul>
       <h3>Copies and shared lists</h3>
       <ul><li>Slices make a copy: <code>a[1:3]</code>, <code>a[:]</code>. But <code>b = a</code> does <b>not</b> copy: both names point at the same list, so changing one changes "both".</li>
       <li>2-D grids: <code>[[0] * cols for _ in range(rows)]</code>. Never <code>[[0] * cols] * rows</code>, which repeats the same row object.</li></ul>
       <h3>Sorting</h3>
-      <p><code>sorted(xs)</code> returns a new sorted list; <code>xs.sort()</code> sorts in place and returns <code>None</code>. Both take <code>key=</code> and <code>reverse=True</code>.</p>
+      <p><code>sorted(xs)</code> returns a new sorted list; <code>xs.sort()</code> sorts in place and returns <code>None</code>. Both take <code>reverse=True</code>, and <code>key=</code> to sort by something else: <code>key=lambda t: t[1]</code> sorts by each item's second part. (<code>lambda</code> writes a tiny unnamed function; more in Functions: going further.)</p>
       <h3>Tuples</h3>
-      <p>A tuple, <code>(3, 4)</code>, is like a list that can't be changed (<b>immutable</b>). Because it can't change, it can be a dictionary key or set member. Unpack it with <code>x, y = point</code>.</p>
-      <h3>Worked example: rotating a list</h3>
-      <p>Rotate <code>[1, 2, 3, 4, 5]</code> left by 2: the first 2 items move to the end.</p>
-      <ol><li><code>lst[2:]</code> is <code>[3, 4, 5]</code>; <code>lst[:2]</code> is <code>[1, 2]</code>.</li>
-      <li>Put them together: <code>lst[2:] + lst[:2]</code> is <code>[3, 4, 5, 1, 2]</code>.</li>
-      <li>Rotating by 7 on a 5-item list is the same as rotating by 2, so use <code>k % len(lst)</code> first (and handle the empty list, where <code>len</code> is 0).</li></ol>`,
+      <p>A tuple, <code>(3, 4)</code>, is like a list that can't be changed (<b>immutable</b>). Because it can't change, it can be a dictionary key or set member (the next lesson). Unpack it with <code>x, y = point</code>.</p>
+      <h3>Worked example: moving the last items to the front</h3>
+      <p>Take <code>[1, 2, 3, 4, 5]</code> and move the last 2 items to the front.</p>
+      <ol><li><code>lst[-2:]</code> is the last two items, <code>[4, 5]</code>; <code>lst[:-2]</code> is everything before them, <code>[1, 2, 3]</code>.</li>
+      <li>Put them together: <code>lst[-2:] + lst[:-2]</code> is <code>[4, 5, 1, 2, 3]</code>. This is called rotating <i>right</i> by 2.</li></ol>`,
     example: `a = [1, 2, 3, 4, 5]
 b = a            # same list
 c = a[:]         # copy
@@ -654,8 +653,7 @@ grid[0][0] = 1
 print(grid)
 print(sorted([("x", 3), ("y", 1)], key=lambda t: t[1]))
 
-k = 2
-print(a[k:] + a[:k])   # rotate left by 2
+print(a[-2:] + a[:-2])   # the last 2 moved to the front
 `,
     practice: [
       { why: "`sort()` sorts in place and returns `None`, so assigning its result loses the list. Use `sort()` alone, or `sorted()` for a new list.",
@@ -695,7 +693,7 @@ assert reversed_copy([]) == []`,
     return lst[::-1]` },
       { key: 0, prompt: "Write rotate_left(lst, k) that returns a NEW list rotated left by k places. k may be bigger than the list's length; an empty list stays empty.",
         example: "rotate_left([1, 2, 3, 4, 5], 2) returns [3, 4, 5, 1, 2]",
-        hint: "Follow the worked example: return `[]` for an empty list, set `k = k % len(lst)`, then `lst[k:] + lst[:k]`.",
+        hint: "Rotating left is the mirror image of the worked example: the FIRST k items move to the end, so `lst[k:] + lst[:k]`. Return `[]` for an empty list first, and use `k = k % len(lst)` so a k bigger than the length wraps around.",
         starter: "def rotate_left(lst, k):\n    pass\n",
         tests: `assert rotate_left([1,2,3,4,5], 2) == [3,4,5,1,2]
 assert rotate_left([1,2,3], 7) == [2,3,1]
@@ -707,17 +705,16 @@ assert rotate_left([], 3) == []`,
     return lst[k:] + lst[:k]` },
       { key: 1, prompt: "Write dedupe(lst) that removes duplicates but keeps the items in the order they first appeared.",
         example: "dedupe([3, 1, 3, 2, 1]) returns [3, 1, 2]",
-        hint: "Keep a set of items you've already seen. Loop over the list and append an item to the result only if it isn't in the set yet, then add it to the set.",
+        hint: "Build a new list. Loop over the items and append each one only `if x not in result`, using the `in` check from above. (The Dicts & sets lesson shows a faster way.)",
         starter: "def dedupe(lst):\n    pass\n",
         tests: `assert dedupe([3,1,3,2,1]) == [3,1,2]
 assert dedupe([]) == []`,
         solution: `def dedupe(lst):
-    seen, out = set(), []
+    result = []
     for x in lst:
-        if x not in seen:
-            seen.add(x)
-            out.append(x)
-    return out` },
+        if x not in result:
+            result.append(x)
+    return result` },
     ],
   },
   {
@@ -728,20 +725,20 @@ assert dedupe([]) == []`,
       <h3>The everyday tools</h3>
       <ul><li><code>d.get(k, default)</code> returns a default instead of failing on a missing key.</li>
       <li><code>for k, v in d.items():</code> loops over keys and values together. Dicts keep insertion order. Don't add or remove keys while looping over a dict.</li>
-      <li><code>collections.Counter(items)</code> counts things; <code>defaultdict(list)</code> groups them.</li>
+      <li><code>Counter(items)</code> counts things; <code>defaultdict(list)</code> groups them. Both come from Python's <b>standard library</b>, ready-made tools that ship with Python: <code>from collections import Counter</code> loads one into your file.</li>
       <li>Sets support <code>|</code> (union), <code>&amp;</code> (in both), <code>-</code> (difference), and fast <code>x in s</code>.</li></ul>
-      <h3>Worked example: counting words</h3>
-      <ol><li>Start with an empty dict: <code>counts = {}</code>.</li>
-      <li>For each word, <code>counts[w] = counts.get(w, 0) + 1</code>: look up the current count (0 if the word is new), add 1, store it back.</li>
-      <li>For <code>"the cat the"</code>, counts goes <code>{"the": 1}</code>, then <code>{"the": 1, "cat": 1}</code>, then <code>{"the": 2, "cat": 1}</code>.</li></ol>
+      <h3>Worked example: tallying votes</h3>
+      <ol><li>Start with an empty dict: <code>tally = {}</code>.</li>
+      <li>For each vote <code>v</code>, <code>tally[v] = tally.get(v, 0) + 1</code>: look up the current count (0 if it's a new option), add 1, store it back.</li>
+      <li>For the votes <code>["red", "blue", "red"]</code>, tally goes <code>{"red": 1}</code>, then <code>{"red": 1, "blue": 1}</code>, then <code>{"red": 2, "blue": 1}</code>.</li></ol>
       <p>Counting, grouping, "have I seen this before?" and caching results are the most common uses in interviews.</p>`,
     example: `ages = {"Ada": 36, "Sam": 20}
 print(ages["Ada"], ages.get("Bob", "unknown"))
 
-counts = {}
-for w in "the cat the".split():
-    counts[w] = counts.get(w, 0) + 1
-print(counts)
+tally = {}
+for v in ["red", "blue", "red"]:
+    tally[v] = tally.get(v, 0) + 1
+print(tally)              # {'red': 2, 'blue': 1}
 
 from collections import Counter, defaultdict
 print(Counter("mississippi").most_common(2))
@@ -767,7 +764,11 @@ else:
         bad: `for k in stock:
     if stock[k] == 0:
         del stock[k]        # RuntimeError: dict changed size`,
-        good: `stock = {k: n for k, n in stock.items() if n > 0}` },
+        good: `in_stock = {}
+for k, n in stock.items():
+    if n > 0:
+        in_stock[k] = n
+stock = in_stock` },
     ],
     exercises: [
       { key: "phone", prompt: "Write phone_for(book, name) that returns the person's number from the dict, or \"unknown\" if they're not in it.",
@@ -793,7 +794,7 @@ assert invert({}) == {}`,
     return out` },
       { key: 0, prompt: "Write word_count(text) that returns a dict of each lowercase word and how many times it appears (split on whitespace).",
         example: `word_count("the cat The dog") returns {"the": 2, "cat": 1, "dog": 1}`,
-        hint: "Follow the worked example, but lowercase the text first with `text.lower()`.",
+        hint: "Like the vote tally in the worked example, but the items are words: lowercase the text with `text.lower()`, split it with `.split()`, and count each word.",
         starter: "def word_count(text):\n    pass\n",
         tests: `assert word_count('the cat The dog') == {'the': 2, 'cat': 1, 'dog': 1}
 assert word_count('') == {}`,
@@ -820,38 +821,43 @@ def first_unique_char(s):
     ],
   },
   {
-    id: "functions-more", title: "9. Functions: going further", label: "Functions: going further",
-    body: `<p>This lesson builds on <button class="link-btn inline-link" data-ref="py:functions">Functions</button>. These features are common in real code and in interviews, but you can write plenty of working programs without them.</p>
+    id: "functions-more", title: "9. Functions: going further",
+    body: `<p>This lesson builds on <button class="link-btn inline-link" data-ref="py:functions">Functions: parameters and return values</button>. These features are common in real code and in interviews, but you can write plenty of working programs without them.</p>
       <ul><li><b>Default values are made once.</b> <code>def f(x, acc=[])</code> creates that list a single time, when the function is defined, and every call shares it: a classic bug. Use <code>acc=None</code> and create the list inside.</li>
       <li><b>Any number of arguments.</b> <code>*args</code> collects extra positional arguments into a tuple; <code>**kwargs</code> collects extra named ones into a dict. Parameters after a bare <code>*</code> must be named: <code>def f(a, *, b)</code> is called as <code>f(1, b=2)</code>.</li>
       <li><b>Scope</b> is where a name is visible. Python looks a name up in this order, called <b>LEGB</b>: Local (inside this function), Enclosing (an outer function), Global (the file), Built-in (like <code>len</code>).</li>
       <li><b>Closures.</b> A function defined inside another can use the outer function's variables, even after the outer one has returned. That inner function plus the variables it remembers is a <b>closure</b>. To <i>change</i> (not just read) an outer variable, declare it <code>nonlocal</code>.</li>
       <li><b>Functions are values.</b> You can pass them as arguments (<code>sorted(xs, key=len)</code>), return them, and write short ones with <code>lambda x: x * 2</code>.</li>
       <li>Add type hints and docstrings; interviewers like readable signatures.</li></ul>
-      <h3>Worked example: a counter</h3>
-      <ol><li><code>counter()</code> sets <code>n = 0</code>, defines <code>inc</code>, and returns <code>inc</code> itself (not a call to it).</li>
-      <li><code>c = counter()</code>: <code>c</code> is now the inner function, still holding on to its own <code>n</code>.</li>
-      <li>Each <code>c()</code> runs <code>nonlocal n; n += 1</code>, so it returns 1, then 2, ... A second <code>counter()</code> gets a separate <code>n</code>.</li></ol>`,
-    example: `def add_item(x, bucket=None):
-    bucket = [] if bucket is None else bucket
-    bucket.append(x)
-    return bucket
+      <h3>Worked example: a running total</h3>
+      <ol><li><code>make_total()</code> sets <code>total = 0</code>, defines <code>add</code>, and returns <code>add</code> itself (not a call to it).</li>
+      <li><code>t = make_total()</code>: <code>t</code> is now the inner function, still holding on to its own <code>total</code>.</li>
+      <li><code>t(5)</code> runs <code>nonlocal total; total += 5</code> and returns 5; then <code>t(3)</code> returns 8. A second <code>make_total()</code> gets a separate <code>total</code>.</li></ol>`,
+    example: `def add_tag(tag, tags=None):
+    if tags is None:
+        tags = []                 # a new list for every call
+    tags.append(tag)
+    return tags
 
-print(add_item(1), add_item(2))   # [1] [2]
+print(add_tag("a"), add_tag("b"))   # ['a'] ['b']
 
-def counter():
-    n = 0
-    def inc():
-        nonlocal n
-        n += 1
-        return n
-    return inc
+def make_total():
+    total = 0
+    def add(amount):
+        nonlocal total
+        total += amount
+        return total
+    return add
 
-c = counter(); c(); print(c())   # 2
+t = make_total()
+t(5)
+print(t(3))                       # 8
 
-def total(*nums, scale=1):
-    return sum(nums) * scale
-print(total(1, 2, 3, scale=10))   # 60
+def show_all(*items, sep=", "):
+    return sep.join(items)
+
+print(show_all("a", "b", "c"))           # a, b, c
+print(show_all("a", "b", sep=" / "))     # a / b
 `,
     practice: [
       { why: "A lambda assigned to a name is just a worse `def`: no name in tracebacks, no docstring, one expression only (PEP 8 says so too).",
@@ -897,7 +903,7 @@ assert total() == 0`,
     return sum(nums) * scale` },
       { key: 0, prompt: "Write make_counter(start=0) that returns a function; each call to that function returns the next number (start, start+1, ...). Two counters must count independently.",
         example: "a = make_counter()\na(), a(), a() returns 0, 1, 2\nb = make_counter(10)\nb() returns 10",
-        hint: "Follow the worked example: store `n = start` in make_counter, define an inner function that saves the current n, adds 1 (with `nonlocal n`), and returns the saved value. Return the inner function.",
+        hint: "Like the running total in the worked example: keep `n = start` in make_counter and define an inner function that uses `nonlocal n`. This time return the value BEFORE adding 1: save it, add 1, return the saved value. Then return the inner function.",
         starter: "def make_counter(start=0):\n    pass\n",
         tests: `a = make_counter(); b = make_counter(10)
 assert (a(), a(), a()) == (0, 1, 2)
@@ -916,14 +922,16 @@ assert b() == 10 and a() == 3`,
     id: "comprehensions", title: "10. Comprehensions, iterators & generators",
     body: `<p>A <b>comprehension</b> builds a list, dict or set in one expression. <code>[x * x for x in nums]</code> reads as "x squared, for each x in nums". It's the same as a loop that appends, written more compactly.</p>
       <ul><li><code>[f(x) for x in xs if cond]</code>, <code>{k: v for ...}</code>, <code>{x for ...}</code>. Keep them to one readable line.</li>
+      <li>An <b>iterator</b> hands out values one at a time: a <code>for</code> loop keeps asking it for the next value until it runs out, and <code>next(it)</code> asks by hand.</li>
       <li>A <b>generator</b> produces values one at a time, only when asked, instead of building the whole list in memory. Write one with <code>yield</code> in a function, or as a generator expression: <code>sum(x*x for x in xs)</code>.</li>
-      <li><code>any(...)</code>, <code>all(...)</code>, <code>min/max(key=...)</code>, <code>map</code>, <code>filter</code>, <code>zip</code>, <code>enumerate</code>, <code>reversed</code>.</li></ul>
+      <li><code>any(...)</code>, <code>all(...)</code>, <code>min/max(key=...)</code>, <code>map</code>, <code>filter</code>, <code>zip</code>, <code>enumerate</code>, <code>reversed</code>.</li>
+      <li><code>_</code> is the usual name for a loop variable you don't use: <code>[0 for _ in range(3)]</code>.</li></ul>
       <h3>Worked example: from loop to comprehension</h3>
       <pre>result = []
 for x in nums:
-    if x % 2 == 0:
-        result.append(x * x)</pre>
-      <p>Take the appended expression (<code>x * x</code>), then the <code>for</code> line, then the <code>if</code> line, and put them in square brackets: <code>[x * x for x in nums if x % 2 == 0]</code>.</p>`,
+    if x &gt; 0:
+        result.append(x * 2)</pre>
+      <p>Take the appended expression (<code>x * 2</code>), then the <code>for</code> line, then the <code>if</code> line, and put them in square brackets: <code>[x * 2 for x in nums if x &gt; 0]</code>, "double each positive number".</p>`,
     example: `print([x * x for x in range(6) if x % 2 == 0])
 print({w: len(w) for w in ["a", "bb"]})
 
@@ -937,12 +945,12 @@ g = evens()
 print([next(g) for _ in range(4)])
 `,
     practice: [
-      { why: "A comprehension builds the list in one expression: shorter, a little faster, and it reads as \"the squares of the evens\".",
-        bad: `squares = []
-for x in nums:
-    if x % 2 == 0:
-        squares.append(x * x)`,
-        good: `squares = [x * x for x in nums if x % 2 == 0]` },
+      { why: "A comprehension builds the list in one expression: shorter, a little faster, and it reads as \"the lengths of the non-empty words\".",
+        bad: `sizes = []
+for w in words:
+    if w:
+        sizes.append(len(w))`,
+        good: `sizes = [len(w) for w in words if w]` },
       { why: "`sum`, `max`, `any` and friends accept a generator, so there's no need to build a whole list in memory first.",
         bad: `total = sum([x * x for x in nums])     # builds a full list first`,
         good: `total = sum(x * x for x in nums)       # one item at a time` },
@@ -966,7 +974,7 @@ assert lengths([]) == []`,
     return [len(w) for w in words]` },
       { key: 0, prompt: "Write squares_of_evens(nums) that returns the squares of the even numbers, using a list comprehension.",
         example: "squares_of_evens([1, 2, 3, 4]) returns [4, 16]",
-        hint: "This is the worked example: `[x * x for x in nums if x % 2 == 0]`.",
+        hint: "Adapt the worked example: the condition becomes \"is even\" (`x % 2 == 0`) and the expression becomes \"squared\" (`x * x`).",
         starter: "def squares_of_evens(nums):\n    pass\n",
         tests: `assert squares_of_evens([1,2,3,4]) == [4,16]
 assert squares_of_evens([]) == []`,
@@ -1001,22 +1009,21 @@ assert list(fib(0)) == []`,
     body: `<p>A <b>class</b> is a blueprint for making objects that bundle data with the functions that work on it. Each object made from the class is an <b>instance</b>; functions defined inside a class are called <b>methods</b>.</p>
       <ul><li><code>__init__</code> runs when you create an instance and sets up its data. <code>self</code> is the instance itself, written explicitly as the first parameter of every method.</li>
       <li>"Dunder" (double underscore) methods hook into Python's syntax: <code>__len__</code> makes <code>len(x)</code> work, <code>__repr__</code> controls how it prints, <code>__eq__</code> defines <code>==</code>.</li>
-      <li>Use <code>@dataclass</code> for plain data holders. Use <code>@property</code> for computed attributes.</li>
-      <li>Interview staples built from classes: <code>ListNode</code>, <code>TreeNode</code>, <code>Trie</code>, <code>LRUCache</code>, <code>MinStack</code>.</li>
-      <li>Prefer composition over inheritance; know that <code>super().__init__()</code> calls the parent.</li></ul>
+      <li>A line starting with <code>@</code> just above a class or function is a <b>decorator</b>: it adds behaviour to what follows. <code>@dataclass</code> writes <code>__init__</code> and friends for plain data holders; <code>@property</code> makes a method read like an attribute.</li>
+      <li><b>Inheritance</b>: <code>class Puppy(Dog):</code> makes Puppy a kind of Dog that gets all of Dog's methods, and <code>super().__init__()</code> runs the parent's setup. Often it's simpler to give an object another object to use (<b>composition</b>) than to inherit.</li>
+      <li>Interview staples built from classes, which you'll meet in the Data Structures course: <code>ListNode</code>, <code>TreeNode</code>, <code>Trie</code>, <code>LRUCache</code>, <code>MinStack</code>.</li></ul>
       <h3>Worked example</h3>
-      <ol><li><code>r = Rectangle(3, 4)</code> creates an instance and calls <code>__init__(r, 3, 4)</code>, which stores <code>self.width = 3</code>, <code>self.height = 4</code>.</li>
-      <li><code>r.area()</code> calls the method with <code>self</code> set to <code>r</code>, so it returns <code>3 * 4</code>.</li></ol>`,
-    example: `class Rectangle:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
+      <ol><li><code>c = Circle(2)</code> creates an instance and calls <code>__init__(c, 2)</code>, which stores <code>self.radius = 2</code>.</li>
+      <li><code>c.area()</code> calls the method with <code>self</code> set to <code>c</code>, so it returns <code>3.14159 * 2 ** 2</code>.</li></ol>`,
+    example: `class Circle:
+    def __init__(self, radius):
+        self.radius = radius
 
     def area(self):
-        return self.width * self.height
+        return 3.14159 * self.radius ** 2
 
-r = Rectangle(3, 4)
-print(r.width, r.area())   # 3 12
+c = Circle(2)
+print(c.radius, c.area())   # 2 12.56636
 
 class ListNode:
     def __init__(self, val=0, next=None):
@@ -1068,7 +1075,7 @@ print(user.name)` },
     exercises: [
       { key: "rectangle", prompt: "Write a class Rectangle created as Rectangle(width, height), with methods area() and perimeter().",
         example: "r = Rectangle(3, 4)\nr.area() returns 12\nr.perimeter() returns 14",
-        hint: "Store both values in `__init__` (`self.width = width`, ...). Perimeter is `2 * (width + height)`. Every method takes `self` first.",
+        hint: "Like the Circle in the worked example, but `__init__` stores two values (`self.width = width`, `self.height = height`). Perimeter is `2 * (width + height)`. Every method takes `self` first.",
         starter: "class Rectangle:\n    pass\n",
         tests: `r = Rectangle(3, 4)
 assert r.area() == 12
@@ -1106,7 +1113,7 @@ assert Tally().count == 0, "each Tally has its own count"`,
         self.count = 0` },
       { key: 0, prompt: "Write a class Stack with push(x), pop(), peek(), is_empty() and len() support. pop and peek on an empty stack must raise IndexError.",
         example: "s = Stack(); s.push(1); s.push(2)\ns.peek() returns 2, len(s) is 2\ns.pop() returns 2",
-        hint: "Keep a list in `self.items`. push appends, pop uses `self.items.pop()`, peek returns `self.items[-1]` (both raise IndexError on an empty list by themselves). `__len__` returns `len(self.items)`.",
+        hint: "Keep a list in `self.items`. push appends, pop uses `self.items.pop()`, peek returns `self.items[-1]` (both raise IndexError on an empty list by themselves; errors are the next lesson). `__len__` returns `len(self.items)`.",
         starter: "class Stack:\n    pass\n",
         tests: `s = Stack()
 assert s.is_empty() and len(s) == 0
@@ -1143,7 +1150,7 @@ for fn in (s.pop, s.peek):
     body: `<p>When something goes wrong at run time, Python <b>raises</b> an <b>exception</b>: an object describing the problem, such as <code>ValueError</code> or <code>KeyError</code>. If nothing handles it, the program stops and prints the error.</p>
       <ul><li><code>try / except SpecificError / else / finally</code> handles an exception. Catch the narrowest exception you can; never a bare <code>except:</code>.</li>
       <li><code>raise ValueError("message")</code> signals bad input from your own code. Python favours EAFP ("easier to ask forgiveness than permission"): try the operation and handle the failure, rather than checking everything first.</li>
-      <li>Context managers (<code>with open(...) as f:</code>) guarantee cleanup.</li>
+      <li>Context managers (<code>with open(...) as f:</code>) guarantee cleanup, such as closing a file you opened, even when an error happens.</li>
       <li>In interviews: state your assumptions about invalid input, and handle empty input explicitly.</li></ul>
       <h3>Worked example</h3>
       <ol><li><code>parse("42")</code>: <code>int("42")</code> works, so the <code>try</code> block returns 42 and the <code>except</code> is skipped.</li>
@@ -1238,14 +1245,15 @@ except ValueError:
     body: `<p>Python ships with a large <b>standard library</b>: modules you can <code>import</code> without installing anything. A few of them come up in almost every coding interview.</p>
       <ul><li><code>collections</code>: <code>deque</code> (fast adds and removes at both ends), <code>Counter</code>, <code>defaultdict</code>, <code>OrderedDict</code>.</li>
       <li><code>heapq</code>: a <b>min-heap</b>, a list arranged so the smallest item is always at the front (<code>heappush, heappop, nlargest, nsmallest</code>). Negate values for a max-heap; push tuples for priorities.</li>
-      <li><code>bisect</code>: <code>bisect_left/right</code> for binary search on sorted lists.</li>
+      <li><code>bisect</code>: <code>bisect_left/right</code> for <b>binary search</b> on sorted lists (finding a position by repeatedly halving the part you look at).</li>
       <li><code>functools.cache</code> for memoization (remembering results of earlier calls); <code>itertools</code>: <code>permutations, combinations, product, accumulate</code>.</li>
       <li><code>math.inf</code>, <code>sys.setrecursionlimit</code> (default depth ~1000), <code>string.ascii_lowercase</code>.</li></ul>
       <h3>Worked example</h3>
-      <p><code>Counter("banana")</code> counts each letter: <code>{"a": 3, "n": 2, "b": 1}</code>. <code>.most_common(1)</code> returns the top one as a list of pairs, <code>[("a", 3)]</code>, so <code>[0][0]</code> picks out <code>"a"</code>.</p>`,
+      <p><code>Counter(["red", "blue", "red", "green", "blue", "red"])</code> counts each vote: <code>{"red": 3, "blue": 2, "green": 1}</code>. <code>.most_common(2)</code> returns the top two as a list of (item, count) pairs, <code>[("red", 3), ("blue", 2)]</code>, so <code>[0]</code> is the winner's pair and <code>[0][1]</code> its count, 3.</p>`,
     example: `import heapq, bisect
 from collections import deque, Counter
-print(Counter("banana").most_common(1)[0][0])   # a
+votes = Counter(["red", "blue", "red", "green", "blue", "red"])
+print(votes.most_common(2))   # [('red', 3), ('blue', 2)]
 h = []
 for x in [5, 1, 4]: heapq.heappush(h, x)
 print(heapq.heappop(h), heapq.nlargest(2, [5, 1, 4]))
@@ -1280,7 +1288,7 @@ for c in costs:
     exercises: [
       { key: "most_common", prompt: "Write most_common_char(s) that returns the character that appears most often, using collections.Counter.",
         example: `most_common_char("banana") returns "a"`,
-        hint: "Follow the worked example: `Counter(s).most_common(1)[0][0]`.",
+        hint: "Count the characters with `Counter(s)`. As with the votes in the worked example, `.most_common(1)` gives a list holding one (character, count) pair; take the character with `[0][0]`.",
         starter: "from collections import Counter\n\ndef most_common_char(s):\n    pass\n",
         tests: `assert most_common_char("banana") == "a"
 assert most_common_char("x") == "x"
@@ -1338,7 +1346,7 @@ def insert_position(sorted_list, x):
       <tr><td>O(1)</td><td>dict lookup, array index</td></tr><tr><td>O(log n)</td><td>binary search, balanced tree height</td></tr>
       <tr><td>O(n)</td><td>single pass, hash-map approach</td></tr><tr><td>O(n log n)</td><td>sorting, heap of n items</td></tr>
       <tr><td>O(n²)</td><td>nested loops, brute-force pairs</td></tr><tr><td>O(2ⁿ) / O(n!)</td><td>subsets / permutations (backtracking)</td></tr></table>
-      <p>Always state time AND space. Drop constants, keep the dominant term. Memoizing a recursion with <code>@cache</code> (remembering answers already worked out) turns exponential into polynomial when subproblems overlap.</p>`,
+      <p>Always state time AND space. Drop constants, keep the dominant term. Memoizing a recursion with <code>@cache</code> (remembering answers already worked out) turns exponential time (the work doubles each time n grows by 1) into polynomial time (like n or n²) when the same smaller problems come up again and again.</p>`,
     example: `def factorial(n):
     if n == 0:          # base case
         return 1
@@ -1404,17 +1412,18 @@ def depth(node):
     return res` },
     ],
     exercises: [
-      { key: "factorial", prompt: "Write factorial(n) recursively: 1 × 2 × ... × n, with factorial(0) being 1.",
-        example: "factorial(5) returns 120\nfactorial(0) returns 1",
-        hint: "This is the worked example: base case `if n == 0: return 1`, otherwise `return n * factorial(n - 1)`.",
-        starter: "def factorial(n):\n    pass\n",
-        tests: `assert factorial(0) == 1
-assert factorial(1) == 1
-assert factorial(5) == 120`,
-        solution: `def factorial(n):
+      { key: "sum_up", prompt: "Write sum_up(n) recursively (no loop): 1 + 2 + ... + n, with sum_up(0) being 0.",
+        example: "sum_up(4) returns 10\nsum_up(0) returns 0",
+        hint: "Same shape as factorial in the worked example, with + instead of ×: the base case is `n == 0` (answer 0), and otherwise the answer is `n + sum_up(n - 1)`.",
+        starter: "def sum_up(n):\n    pass\n",
+        tests: `assert sum_up(0) == 0
+assert sum_up(1) == 1
+assert sum_up(4) == 10
+assert sum_up(100) == 5050`,
+        solution: `def sum_up(n):
     if n == 0:
-        return 1
-    return n * factorial(n - 1)` },
+        return 0
+    return n + sum_up(n - 1)` },
       { key: "sum_digits", prompt: "Write sum_digits(n) recursively: the sum of the digits of a non-negative whole number.",
         example: "sum_digits(1234) returns 10",
         hint: "`n % 10` is the last digit and `n // 10` is the number without it. Base case: a number below 10 is its own digit sum.",
@@ -1493,20 +1502,18 @@ assert total([-1, 1]) == 0          # negatives` },
 assert math.isclose(average([0.1, 0.2]), 0.15)` },
     ],
     exercises: [
-      { key: "clamp", prompt: "Write clamp(x, lo, hi) that returns x if it's between lo and hi, lo if it's below, and hi if it's above.",
-        example: "clamp(5, 0, 10) returns 5\nclamp(-1, 0, 10) returns 0\nclamp(11, 0, 10) returns 10",
-        hint: "Two checks: `if x < lo: return lo`, `if x > hi: return hi`, otherwise return x. (Or `max(lo, min(x, hi))`.)",
-        starter: "def clamp(x, lo, hi):\n    pass\n",
-        tests: `assert clamp(5, 0, 10) == 5
-assert clamp(-1, 0, 10) == 0
-assert clamp(11, 0, 10) == 10
-assert clamp(0, 0, 10) == 0 and clamp(10, 0, 10) == 10, "the edges themselves are inside"`,
-        solution: `def clamp(x, lo, hi):
-    if x < lo:
-        return lo
-    if x > hi:
-        return hi
-    return x` },
+      { key: "mean", prompt: "Write mean(nums) that returns the average of a list of numbers, and 0 for an empty list. Think about which edge cases the tests should cover before you run them.",
+        example: "mean([2, 4, 9]) returns 5.0\nmean([]) returns 0",
+        hint: "`sum(nums) / len(nums)` works for most lists, but for an empty list `len(nums)` is 0 and dividing by 0 raises ZeroDivisionError. Check `if not nums:` first and return 0.",
+        starter: "def mean(nums):\n    pass\n",
+        tests: `assert mean([2, 4, 9]) == 5
+assert mean([7]) == 7, "one item"
+assert mean([-2, 2]) == 0, "negatives"
+assert mean([]) == 0, "empty list: return 0 instead of dividing by zero"`,
+        solution: `def mean(nums):
+    if not nums:
+        return 0
+    return sum(nums) / len(nums)` },
       { key: 0, prompt: "Write is_leap_year(y): a year is a leap year if it's divisible by 4, except century years (divisible by 100), which are only leap years if divisible by 400. Think about which edge cases to test: 1900, 2000, 2024, 2100.",
         example: "is_leap_year(2024) returns True\nis_leap_year(1900) returns False\nis_leap_year(2000) returns True",
         hint: "Check the most specific rule first: divisible by 400 → True; else divisible by 100 → False; else divisible by 4 → True; else False.",
@@ -1539,6 +1546,8 @@ assert largest([-5, -2, -9]) == -2, f"all negative: expected -2, got {largest([-
   },
 ];
 // Pages renamed when the old Basics and Functions lessons were split, so old links still open.
-const LESSON_ALIASES = { "py:basics": "py:types" };
+// Short names for the Python from zero lessons open them too.
+const LESSON_ALIASES = { "py:basics": "py:types", "zero:variables": "zero:values", "zero:functions": "zero:first-functions",
+  "zero:lists": "zero:first-lists", "zero:errors": "zero:reading-errors" };
 // Saved exercise progress from before the split: old key -> new key (see migrateRef in js/app.js).
 const REF_MOVED = { "basics-0": "loops-fizzbuzz", "functions-0": "functions-more-0", "functions-1": "functions-more-1" };

@@ -796,3 +796,4 @@ h3.ex-title { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; fon
 .ex-help > summary { font-weight: 500; }
 .ex-help[open] > summary { margin-bottom: 6px; }
 .note-later { border-left: 3px solid var(--warn); }
+.lesson-pos { margin: -4px 0 14px; color: var(--muted); }

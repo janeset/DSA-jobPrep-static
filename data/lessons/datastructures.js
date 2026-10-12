@@ -534,7 +534,7 @@ var reversed = Reverse(head);         // 3 -> 2 -> 1`,
     },
   },
   {
-    id: "stack", name: "Stack", short: "Stk",
+    id: "stack", name: "Stack (last in, first out)", short: "Stk",
     what: "Last in, first out (LIFO). You only touch the top: push adds to it, pop removes from it. The call stack that runs recursion is literally a stack.",
     when: ["Matching brackets, undo, backtracking state", "'Next greater / smaller element' (monotonic stack)", "Turning recursion into iteration (iterative DFS)"],
     ops: [["Push", "O(1)"], ["Pop", "O(1)"], ["Peek top", "O(1)"], ["Search", "O(n)"]],

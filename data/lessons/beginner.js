@@ -52,19 +52,19 @@ total_price = price * quantity` },
         good: `age = 36           # a real number` },
     ],
     exercises: [
-      { prompt: "Create a variable called name that holds the text Ada.",
-        example: `After your code runs, name holds "Ada"`,
+      { key: "city", prompt: "Create a variable called city that holds the text Toronto.",
+        example: `After your code runs, city holds "Toronto"`,
         hint: "Text goes in quotes: write the variable name, then =, then the text in quotes.",
         starter: "# Write your line below\n",
-        tests: `assert name == "Ada", "name should hold the text Ada (with quotes around it in your code)"`,
-        solution: `name = "Ada"` },
-      { prompt: "Create a variable called age that holds the number 36. Make it a number, not text.",
-        example: "After your code runs, age holds 36",
-        hint: "Numbers don't use quotes. `age = \"36\"` would be text.",
+        tests: `assert city == "Toronto", "city should hold the text Toronto (with quotes around it in your code)"`,
+        solution: `city = "Toronto"` },
+      { key: "score", prompt: "Create a variable called score that holds the number 90. Make it a number, not text.",
+        example: "After your code runs, score holds 90",
+        hint: "Numbers don't use quotes. `score = \"90\"` would be text.",
         starter: "# Write your line below\n",
-        tests: `assert age == 36, "age should hold 36 (no quotes: it's a number)"
-assert type(age) is int`,
-        solution: `age = 36` },
+        tests: `assert score == 90, "score should hold 90 (no quotes: it's a number)"
+assert type(score) is int`,
+        solution: `score = 90` },
       { prompt: "The variables width and height are already made for you. Create a variable called area that holds width multiplied by height. Use the variables, not the number 21.",
         example: "width = 7 and height = 3, so area holds 21",
         hint: "Multiplication is `*`. Put the variable names on the right of `=`: `area = width * height`.",
@@ -143,15 +143,15 @@ print(total)` },
     return n * 2` },
     ],
     exercises: [
-      { prompt: "Write a function add(a, b) that returns the sum of the two numbers.",
-        example: "add(2, 3) returns 5",
-        hint: "Replace `pass` with a line that returns the two parameters added together: `return a + b`.",
-        starter: "def add(a, b):\n    pass\n",
-        tests: `assert add(2, 3) == 5, f"add(2, 3) should be 5, got {add(2, 3)}"
-assert add(-1, 1) == 0
-assert add(0, 0) == 0`,
-        solution: `def add(a, b):
-    return a + b` },
+      { key: "subtract", prompt: "Write a function subtract(a, b) that returns a minus b.",
+        example: "subtract(10, 4) returns 6",
+        hint: "Like add in the worked example, but with `-`. The order matters: `a - b`, not `b - a`.",
+        starter: "def subtract(a, b):\n    pass\n",
+        tests: `assert subtract(10, 4) == 6, f"subtract(10, 4) should be 6, got {subtract(10, 4)}"
+assert subtract(4, 10) == -6, "a - b, in that order"
+assert subtract(0, 0) == 0`,
+        solution: `def subtract(a, b):
+    return a - b` },
       { prompt: "Write a function square(n) that returns n multiplied by itself.",
         example: "square(4) returns 16",
         hint: "Multiply the parameter by itself: `return n * n`.",
@@ -203,6 +203,7 @@ assert to_seconds(10) == 600`,
       <pre>for s in scores:
     print(s)</pre>
       <p>Read this as "for each item in <code>scores</code>, call it <code>s</code> and run the indented lines". The body runs once per item: first with <code>s</code> = 70, then 85, then 90.</p>
+      <p>That's all you need for now. Loops get a lesson of their own (<code>range</code>, <code>while</code> and more) in the Python section: <button class="link-btn inline-link" data-ref="py:loops">Loops: for and while</button>.</p>
       <h3>Worked example: adding up a list</h3>
       <ol><li>Start a running total at 0: <code>total = 0</code>.</li>
       <li>Loop over the list. Each time round, add the current item: <code>total = total + s</code>. That line means "work out total plus s, then store the answer back in total".</li>
@@ -270,18 +271,18 @@ assert add_to_end([], "a") == ["a"]`,
         solution: `def add_to_end(items, x):
     items.append(x)
     return items` },
-      { prompt: "Write a function total(nums) that adds up all the numbers in the list, using a for loop. An empty list adds up to 0.",
-        example: "total([1, 2, 3]) returns 6\ntotal([]) returns 0",
-        hint: "Start with `result = 0`. Loop with `for n in nums:` and inside the loop do `result = result + n`. After the loop (not indented under it), return result.",
-        starter: "def total(nums):\n    pass\n",
-        tests: `assert total([1, 2, 3]) == 6, f"total([1, 2, 3]) should be 6, got {total([1, 2, 3])}"
-assert total([]) == 0, "an empty list adds up to 0"
-assert total([10, -10, 5]) == 5`,
-        solution: `def total(nums):
-    result = 0
+      { key: "average", prompt: "Write a function average(nums) that returns the average of a list of numbers: add them up with a for loop, then divide by how many there are. The list always has at least one number.",
+        example: "average([80, 90, 100]) returns 90.0\naverage([1, 2]) returns 1.5",
+        hint: "Start from the running total in the worked example. After the loop (not indented under it), divide the total by `len(nums)` and return that.",
+        starter: "def average(nums):\n    pass\n",
+        tests: `assert average([80, 90, 100]) == 90, f"average([80, 90, 100]) should be 90, got {average([80, 90, 100])}"
+assert average([5]) == 5
+assert average([1, 2]) == 1.5`,
+        solution: `def average(nums):
+    total = 0
     for n in nums:
-        result = result + n
-    return result` },
+        total = total + n
+    return total / len(nums)` },
     ],
   },
   {

@@ -210,7 +210,7 @@ const mainLang = () => S.dsLang || "py";
 const langName = (k) => LANGS.find(([v]) => v === k)[1];
 const beginner = () => S.level !== "code";
 const LEVELS = [["new", "I'm new to programming"], ["code", "I already code"]];
-const lessonLabel = (l) => l.label || l.title.replace(/^\d+\.\s*/, "").split(":")[0];
+const lessonLabel = (l) => l.label || l.title.replace(/^\d+\.\s*/, "");
 // The two Python tracks run on the same page code: Python from zero (beginner.js) and Python (refresher.js).
 const PY_TRACKS = {
   zero: { name: "Python from zero", prefix: "zero:", lessons: () => ZERO_LESSONS },
@@ -325,8 +325,8 @@ const views = {
     <div class="section-head" style="margin:22px 0 10px"><h3 style="margin:0">How it works</h3><span class="muted">Three steps, in order. Your progress is on each card.</span></div>
     <div class="steps">
       ${step(1, "Learn", beginner()
-        ? `Start with Python from zero (no experience needed), then ${esc(langName(mainLang()))}, Big-O, the core data structures and the algorithm patterns interviews use. Lessons have exercises with hints, quizzes and videos.`
-        : `Start with programming principles, refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Lessons have quizzes, exercises and videos.`,
+        ? `Start with Python from zero (no experience needed), then ${esc(langName(mainLang()))}, Big-O, the core data structures and the algorithm patterns interviews use. The Python lessons have worked examples, exercises with hints and model answers, and videos; Big-O and the programming principles end with a quiz.`
+        : `Start with programming principles, refresh ${esc(langName(mainLang()))}, then Big-O, the core data structures and the algorithm patterns interviews use. Language lessons have exercises, Big-O and the principles have quizzes, and most lessons have videos.`,
         learned, path.length, "topics", nextUnit ? `<span class="muted">Next: ${esc(unitLabel(nextUnit))}</span>` : '<span class="badge done">Done</span>',
         `<button class="btn primary" data-ref="${(nextUnit || path[0])[0]}" data-goto="learn">${learned ? "Continue learning" : "Start learning"} &rarr;</button>`)}
       ${step(2, "Problems", `${PROBLEMS.length} problems grouped by pattern and tagged Easy, Medium or Hard. Open one to code it in the browser, log your attempt and reveal the solution.`,
@@ -399,7 +399,7 @@ const views = {
     else if (sel.startsWith("ds:") && DS.some((d) => d.id === sel.slice(3))) body = refDS(sel.slice(3));
     else if (sel.startsWith("pat:") && NOTES[sel.slice(4)]) body = refPattern(sel.slice(4));
     else if (sel === "courses") body = refCourses();
-    else { S.refSel = learnPath()[0][0]; return views.learn(); }
+    else body = refMissing(sel);
     const path = learnPath(), learned = path.filter((u) => u[2]).length, part = partOf(sel);
     const crumbs = `<div class="learn-steps">${pathParts().map(([k, l], i) => `<span class="${k === part && path.some((u) => u[0] === sel) ? "on" : ""}">${i + 1}. ${esc(l)}</span>`).join('<span class="muted">&rsaquo;</span>')}
       <span class="muted" style="margin-left:auto">${learned} / ${path.length} topics done</span></div>`;
@@ -524,13 +524,27 @@ const views = {
 };
 
 // ---------- learn: content for each sidebar item ----------
+// A Learn address that matches no lesson (a mistyped or outdated link). Lessons aren't locked, so this
+// only happens for addresses that don't exist; say so and offer the next lesson on the path.
+function refMissing(sel) {
+  const to = learnNext() || learnPath()[0];
+  return `<div class="label">Learn</div><h2>Lesson not found</h2>
+    <div class="card"><p>There's no lesson at <code>${esc(sel)}</code>. The link may be mistyped or from an older version of the app.</p>
+      <p class="muted">Lessons aren't locked: you can open any of them from the sidebar.</p>
+      <div class="row"><button class="btn primary" data-ref="${to[0]}">Go to ${esc(unitLabel(to))} &rarr;</button></div></div>`;
+}
+
 // A Python lesson from either track: the lesson, good vs bad practice, then exercises run in the browser.
 // Every exercise shows its task, an example, a hint and a model answer the learner can open.
 function refPython(track, id) {
   warmPython(); // the exercises below run Python
   const T = PY_TRACKS[track], ls = T.lessons(), i = ls.findIndex((l) => l.id === id), l = ls[i];
-  const head = track === "zero" ? `Python from zero · Lesson ${i + 1} of ${ls.length}` : "Python";
-  return `<div class="label">${head}</div><h2>${esc(l.title.replace(/^\d+\.\s*/, ""))}</h2>
+  let pos = "";
+  if (track === "zero") {
+    const nx = ls[i + 1] ? ["zero:" + ls[i + 1].id, lessonLabel(ls[i + 1])] : langUnits(mainLang())[0];
+    pos = `<p class="lesson-pos">Lesson ${i + 1} of ${ls.length} in Python from zero. Next: <button class="link-btn inline-link" data-ref="${nx[0]}">${esc(ls[i + 1] ? nx[1] : unitLabel(nx))}</button></p>`;
+  }
+  return `<div class="label">${T.name}</div><h2>${esc(l.title.replace(/^\d+\.\s*/, ""))}</h2>${pos}
     <p class="muted">${pyDoneCount(l)} / ${l.exercises.length} exercises passed (${refDone(ls)} / ${refTotal(ls)} across ${T.name}). Your code runs against tests right here; Python loads on first run. Pass every exercise to complete the lesson.</p>
     <div class="card lesson-body">${l.body}<h3>Try it</h3><pre class="language-py">${esc(l.example)}</pre>
       <div class="row"><button class="btn small" data-example="${track}:${i}">Run this example in the scratchpad</button>
